@@ -47,25 +47,31 @@ const Header = () => {
   }, []);
 
   const handleCartMouseEnter = () => {
-    if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
+    if (cartTimeoutRef.current) {
+      clearTimeout(cartTimeoutRef.current);
+      cartTimeoutRef.current = null;
+    }
     setIsCartDropdownOpen(true);
   };
 
   const handleCartMouseLeave = () => {
     cartTimeoutRef.current = setTimeout(() => {
       setIsCartDropdownOpen(false);
-    }, 200);
+    }, 300);
   };
 
   const handleUserMouseEnter = () => {
-    if (cartTimeoutRef.current) clearTimeout(cartTimeoutRef.current);
+    if (userTimeoutRef.current) {
+      clearTimeout(userTimeoutRef.current);
+      userTimeoutRef.current = null;
+    }
     setIsUserMenuOpen(true);
   };
 
   const handleUserMouseLeave = () => {
     userTimeoutRef.current = setTimeout(() => {
       setIsUserMenuOpen(false);
-    }, 200);
+    }, 300);
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -163,6 +169,8 @@ const Header = () => {
             {isCartDropdownOpen && (
               <div 
                 className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 overflow-hidden"
+                onMouseEnter={handleCartMouseEnter}
+                onMouseLeave={handleCartMouseLeave}
               >
                 <div className="p-3 border-b flex justify-between items-center">
                   <h3 className="font-medium">Giỏ hàng ({itemCount})</h3>
@@ -285,7 +293,8 @@ const Header = () => {
               {isUserMenuOpen && (
                 <div 
                   className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                  onMouseLeave={() => setIsUserMenuOpen(false)}
+                  onMouseEnter={handleUserMouseEnter}
+                  onMouseLeave={handleUserMouseLeave}
                 >
                   <div className="px-4 py-2 border-b">
                     <p className="text-sm font-medium">{user?.name}</p>

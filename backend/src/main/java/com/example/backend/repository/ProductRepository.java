@@ -15,6 +15,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     Optional<Product> findBySlug(String slug);
     
+    /**
+     * Kiểm tra xem một mã SKU đã tồn tại trong cơ sở dữ liệu chưa
+     * @param sku Mã SKU cần kiểm tra
+     * @return true nếu SKU đã tồn tại, false nếu chưa
+     */
+    boolean existsBySku(String sku);
+    
     @Query("SELECT p FROM Product p WHERE p.isFeatured = true AND p.isActive = true ORDER BY p.createdAt DESC")
     List<Product> findFeaturedProducts();
     

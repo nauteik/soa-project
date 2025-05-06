@@ -1,17 +1,20 @@
 package com.example.backend.service.impl;
-
-import com.example.backend.dto.ProductDTO;
-import com.example.backend.model.Brand;
 import com.example.backend.model.Category;
 import com.example.backend.model.Product;
+import com.example.backend.model.Brand;
+import com.example.backend.model.ProductImage;
+import com.example.backend.dto.ProductCreateDTO;
+import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.repository.CategoryRepository;
 import com.example.backend.repository.ProductRepository;
+import com.example.backend.repository.BrandRepository;
+import com.example.backend.repository.ProductImageRepository;
 import com.example.backend.service.ProductService;
-import com.example.backend.util.ModelMapper;
-
+import com.example.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,11 +33,22 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
+    private final ProductImageRepository productImageRepository;
+    private final FileStorageService fileStorageService;
     
     @Autowired
-    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public ProductServiceImpl(
+            ProductRepository productRepository, 
+            CategoryRepository categoryRepository,
+            BrandRepository brandRepository,
+            ProductImageRepository productImageRepository,
+            FileStorageService fileStorageService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.brandRepository = brandRepository;
+        this.productImageRepository = productImageRepository;
+        this.fileStorageService = fileStorageService;
     }
     
     @Override
@@ -598,5 +612,173 @@ public class ProductServiceImpl implements ProductService {
         }
         
         return result.stream().distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Tạo mới sản phẩm từ ProductCreateDTO
+     * @param productDTO Thông tin sản phẩm mới
+     * @return Sản phẩm đã được tạo
+     * @throws ResourceNotFoundException Nếu không tìm thấy danh mục hoặc thương hiệu
+     */
+    @Override
+    @Transactional
+    public Product createProduct(ProductCreateDTO productDTO) throws ResourceNotFoundException {
+        // Kiểm tra và lấy Category
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + productDTO.getCategoryId()));
+        
+        // Kiểm tra và lấy Brand
+        Brand brand = brandRepository.findById(productDTO.getBrandId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + productDTO.getBrandId()));
+        
+        // Tạo mới đối tượng Product
+        Product product = new Product();
+        product.setName(productDTO.getName());
+        product.setSku(productDTO.getSku());
+        product.setSlug(productDTO.getSlug());
+        product.setDescription(productDTO.getDescription());
+        product.setPrice(BigDecimal.valueOf(productDTO.getPrice()));
+        product.setDiscount(productDTO.getDiscount().floatValue());
+        product.setQuantityInStock(productDTO.getQuantityInStock());
+        product.setQuantitySold(0); // Sản phẩm mới chưa bán được
+        product.setIsActive(productDTO.isActive());
+        product.setIsFeatured(productDTO.isFeatured());
+        product.setCategory(category);
+        product.setBrand(brand);
+        product.setSpecifications(productDTO.getSpecifications());
+        
+        // Lưu sản phẩm vào database
+        Product savedProduct = productRepository.save(product);
+        
+        // Xử lý và lưu các hình ảnh
+        if (productDTO.getImageDataList() != null && !productDTO.getImageDataList().isEmpty()) {
+            for (Map<String, Object> imageData : productDTO.getImageDataList()) {
+                MultipartFile file = (MultipartFile) imageData.get("file");
+                String altText = (String) imageData.get("altText");
+                Boolean isMain = (Boolean) imageData.get("isMain");
+                Integer sortOrder = (Integer) imageData.get("sortOrder");
+                
+                try {
+                    // Sử dụng FileStorageService để lưu hình ảnh
+                    String savedFileName = fileStorageService.store(file);
+                    
+                    // Tạo ProductImage và lưu vào database
+                    ProductImage productImage = new ProductImage();
+                    productImage.setProduct(savedProduct);
+                    productImage.setImageUrl(savedFileName); // Đường dẫn tương đối
+                    productImage.setAlt(altText);
+                    productImage.setIsMain(isMain);
+                    productImage.setSortOrder(sortOrder);
+                    
+                    productImageRepository.save(productImage);
+                } catch (Exception e) {
+                    throw new RuntimeException("Lỗi khi lưu hình ảnh: " + e.getMessage(), e);
+                }
+            }
+        }
+        
+        return savedProduct;
+    }
+
+    /**
+     * Kiểm tra mã SKU đã tồn tại trong hệ thống chưa
+     * @param sku Mã SKU cần kiểm tra
+     * @return true nếu SKU đã tồn tại, false nếu chưa tồn tại
+     */
+    @Override
+    public boolean isSkuExists(String sku) {
+        return productRepository.existsBySku(sku);
+    }
+
+    /**
+     * Cập nhật sản phẩm từ ProductCreateDTO
+     * @param id ID của sản phẩm cần cập nhật 
+     * @param productDTO Thông tin sản phẩm cập nhật
+     * @return Sản phẩm đã được cập nhật
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm, danh mục hoặc thương hiệu
+     */
+    @Override
+    @Transactional
+    public Product updateProduct(Long id, ProductCreateDTO productDTO) throws ResourceNotFoundException {
+        // Tìm sản phẩm cần cập nhật
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
+        
+        // Kiểm tra và lấy Category
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + productDTO.getCategoryId()));
+        
+        // Kiểm tra và lấy Brand
+        Brand brand = brandRepository.findById(productDTO.getBrandId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + productDTO.getBrandId()));
+        
+        // Cập nhật thông tin sản phẩm
+        product.setName(productDTO.getName());
+        product.setSku(productDTO.getSku());
+        product.setSlug(productDTO.getSlug());
+        product.setDescription(productDTO.getDescription());
+        product.setPrice(BigDecimal.valueOf(productDTO.getPrice()));
+        product.setDiscount(productDTO.getDiscount().floatValue());
+        product.setQuantityInStock(productDTO.getQuantityInStock());
+        product.setIsActive(productDTO.isActive());
+        product.setIsFeatured(productDTO.isFeatured());
+        product.setCategory(category);
+        product.setBrand(brand);
+        product.setSpecifications(productDTO.getSpecifications());
+        
+        // Lưu sản phẩm để cập nhật thông tin
+        Product savedProduct = productRepository.save(product);
+        
+        // Xử lý hình ảnh bị xóa
+        if (productDTO.getDeletedImageIds() != null && !productDTO.getDeletedImageIds().isEmpty()) {
+            for (Long imageId : productDTO.getDeletedImageIds()) {
+                productImageRepository.deleteById(imageId);
+            }
+        }
+        
+        // Xử lý cập nhật thông tin hình ảnh hiện có
+        if (productDTO.getExistingImagesList() != null && !productDTO.getExistingImagesList().isEmpty()) {
+            for (Map<String, Object> imageData : productDTO.getExistingImagesList()) {
+                Long imageId = ((Number) imageData.get("id")).longValue();
+                Boolean isMain = (Boolean) imageData.get("isMain");
+                String altText = (String) imageData.get("altText");
+                
+                // Tìm hình ảnh cần cập nhật
+                productImageRepository.findById(imageId).ifPresent(image -> {
+                    image.setIsMain(isMain);
+                    image.setAlt(altText);
+                    productImageRepository.save(image);
+                });
+            }
+        }
+        
+        // Xử lý thêm hình ảnh mới
+        if (productDTO.getImageDataList() != null && !productDTO.getImageDataList().isEmpty()) {
+            for (Map<String, Object> imageData : productDTO.getImageDataList()) {
+                MultipartFile file = (MultipartFile) imageData.get("file");
+                String altText = (String) imageData.get("altText");
+                Boolean isMain = (Boolean) imageData.get("isMain");
+                Integer sortOrder = (Integer) imageData.get("sortOrder");
+                
+                try {
+                    // Sử dụng FileStorageService để lưu hình ảnh
+                    String savedFileName = fileStorageService.store(file);
+                    
+                    // Tạo ProductImage và lưu vào database
+                    ProductImage productImage = new ProductImage();
+                    productImage.setProduct(savedProduct);
+                    productImage.setImageUrl(savedFileName); // Đường dẫn tương đối
+                    productImage.setAlt(altText);
+                    productImage.setIsMain(isMain);
+                    productImage.setSortOrder(sortOrder);
+                    
+                    productImageRepository.save(productImage);
+                } catch (Exception e) {
+                    throw new RuntimeException("Lỗi khi lưu hình ảnh: " + e.getMessage(), e);
+                }
+            }
+        }
+        
+        return savedProduct;
     }
 }

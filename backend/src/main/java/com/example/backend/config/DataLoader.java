@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,10 +30,8 @@ public class DataLoader implements CommandLineRunner {
     private final ProductImageRepository productImageRepository;
     private final UserRepository userRepository;
     // Currency conversion rate (1 USD = 24,000 VND)
-    private static final int USD_TO_VND_RATE = 24000;
     
     // Base URL for static images
-    private static final String BASE_IMAGE_URL = "/static/images/";
     private final PasswordEncoder passwordEncoder;
 
 
@@ -520,7 +517,6 @@ public class DataLoader implements CommandLineRunner {
             BigDecimal price = BigDecimal.valueOf((random.nextInt(18) + 18) * 1000000);
             
             // Create model number
-            String modelPrefix = cpuBrand.equals("Apple") ? "MacBook" : getRandomModelPrefix();
             String modelNumber = String.format("%04d", random.nextInt(9000) + 1000);
             
             // Create product name
@@ -557,14 +553,12 @@ public class DataLoader implements CommandLineRunner {
         String[] connectionTypes = {"Wireless", "Bluetooth", "Wired"};
         Integer[] dpiValues = {800, 1600, 4000, 12000, 16000, 20000};
         Integer[] buttons = {2, 3, 5, 7, 11};
-        String[] colors = {"Black", "White", "Grey", "Blue", "RGB"};
         
         for (int i = 0; i < 5; i++) {
             Brand brand = brands.get((i + 3) % brands.size());
             String connectionType = connectionTypes[i % connectionTypes.length];
             Integer dpi = dpiValues[i % dpiValues.length];
             Integer buttonCount = buttons[i % buttons.length];
-            String color = colors[i % colors.length];
             boolean rgbLighting = random.nextBoolean();
             
             // Create specs
@@ -634,7 +628,6 @@ public class DataLoader implements CommandLineRunner {
             String connectionType = connectionTypes[i % connectionTypes.length];
             String switchType = switchTypes[i % switchTypes.length];
             String layout = layouts[i % layouts.length];
-            String color = colors[i % colors.length];
             boolean rgbLighting = switchType.contains("Mechanical") && random.nextBoolean();
             boolean numpad = layout.equals("Full size");
             
@@ -1013,13 +1006,6 @@ public class DataLoader implements CommandLineRunner {
                 random.nextInt(9000) + 1000);
     }
     
-    /**
-     * Get a random model prefix
-     */
-    private String getRandomModelPrefix() {
-        String[] prefixes = {"X", "Z", "Pro", "Elite", "Ultra", "Slim", "Max", "Air"};
-        return prefixes[random.nextInt(prefixes.length)];
-    }
     
     /**
      * Create product description based on specifications

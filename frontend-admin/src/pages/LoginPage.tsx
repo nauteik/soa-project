@@ -34,9 +34,10 @@ const LoginPage = () => {
     try {
       // Xóa thông báo lỗi cũ nếu có
       setErrorMessage(null);
-      console.log(data);
+      
+      // Gọi API đăng nhập
       const response = await login(data.email, data.password);
-      console.log(response);
+      
       // Kiểm tra kết quả đăng nhập thành công
       if (response && response.token && response.user) {
         toast.success('Đăng nhập thành công');
@@ -109,7 +110,13 @@ const LoginPage = () => {
             </div>
           )}
           
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit(onSubmit)(e);
+            }} 
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email

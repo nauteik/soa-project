@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,46 @@ public class CategoryController {
             return ResponseEntity.ok(fields);
         } catch (Exception e) {
             e.printStackTrace(); // In lỗi chi tiết vào log
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("class", e.getClass().getName());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @GetMapping("/{id}/specification-fields")
+    public ResponseEntity<?> getCategorySpecificationFields(@PathVariable Long id) {
+        try {
+            Optional<Category> categoryOpt = categoryService.getCategoryById(id);
+            if (categoryOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Tìm category và lấy thông số kỹ thuật
+            Category category = categoryOpt.get();
+            List<Category.SpecificationField> fields = category.getSpecificationFields();
+            
+            // Nếu category hiện tại không có thông số, tìm lên category cha cao nhất
+            Category currentCategory = category;
+            while ((fields == null || fields.isEmpty()) && currentCategory.getParent() != null) {
+                currentCategory = currentCategory.getParent();
+                fields = currentCategory.getSpecificationFields();
+            }
+            
+            if (fields == null) {
+                fields = List.of();
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("categoryId", category.getId());
+            response.put("categoryName", category.getName());
+            response.put("specificationFields", fields);
+            response.put("rootCategoryId", currentCategory.getId());
+            response.put("rootCategoryName", currentCategory.getName());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
             errorResponse.put("class", e.getClass().getName());

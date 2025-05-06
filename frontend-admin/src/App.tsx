@@ -11,6 +11,16 @@ import OrdersPage from '@/pages/OrdersPage';
 import UsersPage from '@/pages/UsersPage';
 import SettingsPage from '@/pages/SettingsPage';
 
+// Các trang mới cho sản phẩm
+import ProductDetailPage from '@/pages/product/ProductDetailPage';
+import ProductCreatePage from '@/pages/product/ProductCreatePage';
+import ProductEditPage from '@/pages/product/ProductEditPage';
+
+// Các trang mới cho người dùng
+import UserDetailPage from '@/pages/UserDetailPage';
+import CreateUserPage from '@/pages/CreateUserPage';
+import EditUserPage from '@/pages/EditUserPage';
+
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -72,9 +82,21 @@ const AppRoutes = () => {
         </ProtectedRoute>
       }>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
+        
+        {/* Routes sản phẩm */}
+        <Route path="/products" element={<Navigate to="/products/list" replace />} />
+        <Route path="/products/list" element={<ProductsPage />} />
+        <Route path="/products/create" element={<ProductCreatePage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/products/edit/:id" element={<ProductEditPage />} />
+        
+        {/* Routes người dùng */}
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/users/create" element={<CreateUserPage />} />
+        <Route path="/users/:id" element={<UserDetailPage />} />
+        <Route path="/users/edit/:id" element={<EditUserPage />} />
+        
+        <Route path="/orders" element={<OrdersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 
@@ -87,12 +109,12 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <AppRoutes />
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
-    </Router>
+      </Router>
+      <Toaster position="top-right" richColors />
+    </AuthProvider>
   );
 }
 

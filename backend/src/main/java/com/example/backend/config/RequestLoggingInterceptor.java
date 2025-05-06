@@ -5,8 +5,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
