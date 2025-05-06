@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/soa_project
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# Cấu hình ứng dụng
+app:
+  url: http://localhost:8080
+
+application:
+  security:
+    jwt:
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000 # một ngày 
+
+# Cấu hình VnPay
+vnpay:
+  version: 2.1.0
+  code: VYAE2HT7
+  command: pay
+  return-url: http://localhost:8080/api/payment/callback
+  hashsecret: 6U9HM2EJBNLN3CJRCOYKXI7Q3OTRB9ND
+  api-url: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+  paymentGateway: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html 
