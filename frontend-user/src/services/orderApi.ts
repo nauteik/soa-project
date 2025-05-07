@@ -1,49 +1,14 @@
 import axiosInstance from "../config/axios";
-
-export interface OrderItem {
-  id: number;
-  productId: number;
-  productName: string;
-  productImage?: string;
-  quantity: number;
-  price: number;
-  subtotal: number;
-}
-
-export interface ShippingAddress {
-  fullName: string;
-  phoneNumber: string;
-  province: string;
-  district: string;
-  ward: string;
-  street: string;
-  addressDetail: string;
-}
-
-export interface Order {
-  orderNumber: string;
-  userId: number;
-  items: OrderItem[];
-  shippingAddress: ShippingAddress;
-  totalItems: number;
-  totalAmount: number;
-  status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
-  paymentMethod: "COD" | "VNPAY" | "MOMO";
-  paymentStatus: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
-  note?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Order, OrderStatus, PaymentMethod, PaymentStatus } from "../types/order";
 
 export interface CreateOrderRequest {
   cartItemIds: number[];
   shippingAddressId: number;
-  paymentMethod: "COD" | "VNPAY" | "MOMO";
+  paymentMethod: PaymentMethod;
   note?: string;
 }
 
 export interface PaymentResponse {
-  paymentUrl?: string;
   orderNumber: string;
   success: boolean;
 }
@@ -69,7 +34,7 @@ const orderApi = {
 
   // Hủy đơn hàng
   cancelOrder: async (orderNumber: string): Promise<Order> => {
-    const response = await axiosInstance.put(`/orders/number/${orderNumber}/cancel`);
+    const response = await axiosInstance.post(`/orders/number/${orderNumber}/cancel`);
     return response.data;
   },
 };

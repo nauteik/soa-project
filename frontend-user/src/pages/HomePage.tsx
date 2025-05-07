@@ -57,12 +57,12 @@ const HomePage: React.FC = () => {
     // Chỉ lấy các danh mục cha
     const parentCategories = categories.filter(category => {
       const anyCategory = category as any;
-      return anyCategory.parentId === null;
+      return anyCategory.parent_id === null;
     });
 
     // Lấy tối đa 5 danh mục để hiển thị
     const categoriesToShow = parentCategories.slice(0, 5);
-
+    console.log(categoriesToShow);
     // Lấy sản phẩm cho mỗi danh mục
     categoriesToShow.forEach(category => {
       const fetchCategoryProducts = async () => {
@@ -111,6 +111,39 @@ const HomePage: React.FC = () => {
       {/* Hero Banner */}
       <HeroBanner />
 
+         {/* Brand Highlights */}
+      <section>
+        <div className="container max-w-7xl mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-8">Thương hiệu nổi bật</h2>
+          {brandsLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
+          ) : brandsError ? (
+            <div className="py-8 text-center text-destructive">
+              <p>Không thể tải thương hiệu. Vui lòng thử lại sau.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+              {brands.map((brand) => (
+                <div 
+                  key={brand.id} 
+                  className="flex justify-center items-center p-6 border border-border rounded-lg hover:border-primary transition-colors"
+                >
+                  <img
+                    src={(brand.logoUrl || brand.logo_url) 
+                      ? `${IMAGES_BASE_URL}${brand.logoUrl || brand.logo_url}` 
+                      : `${IMAGES_BASE_URL}placeholder.jpg`}
+                    alt={`logo ${brand.name}`}
+                    className="h-16 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Categories section */}
       <section>
         <div className="container max-w-7xl mx-auto px-4">
@@ -125,22 +158,51 @@ const HomePage: React.FC = () => {
               <p>Không thể tải danh mục sản phẩm. Vui lòng thử lại sau.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories
-                // Kiểm tra null cho parentId (như đã thấy trong log)
-                .filter(category => {
+            <Carousel
+              className="w-full relative"
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 4000,
+                  stopOnInteraction: true,
+                }),
+              ]}
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {categories.map((category) => {
                   const anyCategory = category as any;
-                  return anyCategory.parentId === null;
-                })
-                .map((category) => (
-                  <CategoryCard
-                    key={category.id}
-                    icon={getCategoryIcon(category.slug)}
-                    title={category.name}
-                    link={`/${category.slug}`}
-                  />
-                ))}
-            </div>
+                  // Sử dụng image_url nếu có, nếu không thì dùng icon mặc định
+                  const icon = anyCategory.image_url 
+                    ? <img 
+                        src={`${IMAGES_BASE_URL}${anyCategory.image_url}`} 
+                        alt={category.name} 
+                        className="w-12 h-12 object-contain" 
+                      />
+                    : <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                        {getCategoryIcon(category.slug)}
+                      </div>;
+                  
+                  return (
+                    <CarouselItem key={category.id} className="pl-2 md:pl-4 sm:basis-1/3 md:basis-1/4 lg:basis-1/6 transition-all duration-300 hover:scale-[1.02]">
+                      <div className="p-1 h-full">
+                        <CategoryCard
+                          icon={icon}
+                          title={category.name}
+                          link={`/${category.slug}`}
+                        />
+                      </div>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+              <div className="absolute inset-y-0 -left-4 -right-4 flex items-center justify-between pointer-events-none">
+                <CarouselPrevious className="pointer-events-auto opacity-70 hover:opacity-100" />
+                <CarouselNext className="pointer-events-auto opacity-70 hover:opacity-100" />
+              </div>
+            </Carousel>
           )}
         </div>
       </section>
@@ -172,11 +234,12 @@ const HomePage: React.FC = () => {
       {!categoriesLoading && !categoriesError && categories
         .filter(category => {
           const anyCategory = category as any;
-          return anyCategory.parentId === null;
+          return anyCategory.parent_id === null;
         })
         .slice(0, 5) // Chỉ hiển thị 5 danh mục đầu tiên
         .map((category, index) => {
           const categoryData = categoryProducts[category.id];
+          const anyCategory = category as any;
           
           // Chỉ hiển thị section nếu có sản phẩm
           if (!categoryData || categoryData.products.length === 0) return null;
@@ -190,7 +253,13 @@ const HomePage: React.FC = () => {
                 <div className="flex items-center justify-between mb-8">
                   <div className="space-y-2">
                     <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                      {getCategoryIcon(category.slug)} 
+                      {anyCategory.image_url 
+                        ? <img 
+                            src={`${IMAGES_BASE_URL}${anyCategory.image_url}`} 
+                            alt={category.name} 
+                            className="w-10 h-10 object-contain" 
+                          />
+                        : getCategoryIcon(category.slug)} 
                       {category.name}
                     </h2>
                     <p className="text-muted-foreground">Khám phá bộ sưu tập {category.name} mới nhất</p>
@@ -244,65 +313,7 @@ const HomePage: React.FC = () => {
           );
         })
       }
-
-      {/* Special Offers Banner */}
-      <section className="bg-muted py-12">
-        <div className="container max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center md:justify-between gap-8">
-            <div className="md:w-1/2 space-y-4">
-              <span className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">Khuyến mãi có hạn</span>
-              <h2 className="text-2xl md:text-4xl font-bold">Giảm đến 40% cho Laptop cao cấp</h2>
-              <p className="text-muted-foreground">
-                Nâng cấp thiết bị của bạn với các ưu đãi đặc biệt cho laptop cao cấp.
-                Chương trình áp dụng đến khi hết hàng.
-              </p>
-              <button className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1">
-                Xem ưu đãi
-              </button>
-            </div>
-            <div className="md:w-1/2">
-              <img 
-                src="/static/images/sub5.jpg"
-                alt="Khuyến mãi đặc biệt"
-                className="rounded-lg shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Brand Highlights */}
-      <section>
-        <div className="container max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8">Thương hiệu nổi bật</h2>
-          {brandsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            </div>
-          ) : brandsError ? (
-            <div className="py-8 text-center text-destructive">
-              <p>Không thể tải thương hiệu. Vui lòng thử lại sau.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-              {brands.map((brand) => (
-                <div 
-                  key={brand.id} 
-                  className="flex justify-center items-center p-6 border border-border rounded-lg hover:border-primary transition-colors"
-                >
-                  <img
-                    src={(brand.logoUrl || brand.logo_url) 
-                      ? `${IMAGES_BASE_URL}${brand.logoUrl || brand.logo_url}` 
-                      : `${IMAGES_BASE_URL}placeholder.jpg`}
-                    alt={`logo ${brand.name}`}
-                    className="h-16 object-contain"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+     
     </div>
   );
 };

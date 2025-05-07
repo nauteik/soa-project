@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Outlet, NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -16,7 +16,9 @@ import {
   Plus,
   Edit as EditIcon,
   List,
-  UserPlus
+  UserPlus,
+  BarChart3,
+  Folder
 } from 'lucide-react';
 
 // Cấu trúc dữ liệu cho các mục menu
@@ -31,9 +33,20 @@ interface MenuItem {
 const AdminLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     { icon: <LayoutDashboard size={20} />, title: 'Dashboard', path: '/dashboard' },
+    { 
+      icon: <Folder size={20} />, 
+      title: 'Danh mục', 
+      path: '/categories',
+      isOpen: false,
+      children: [
+        { icon: <List size={16} />, title: 'Danh sách', path: '/categories/list' },
+        { icon: <Plus size={16} />, title: 'Thêm mới', path: '/categories/create' },
+      ]
+    },
     { 
       icon: <Package size={20} />, 
       title: 'Sản phẩm', 
@@ -55,8 +68,31 @@ const AdminLayout = () => {
         { icon: <UserPlus size={16} />, title: 'Thêm mới', path: '/users/create' },
       ]
     },
-    { icon: <Settings size={20} />, title: 'Cài đặt', path: '/settings' },
+    { icon: <BarChart3 size={20} />, title: 'Báo cáo', path: '/reports' },
+    
   ]);
+  
+  // Tự động mở menu dựa trên đường dẫn hiện tại
+  useEffect(() => {
+    const currentPath = location.pathname;
+    
+    setMenuItems(menuItems.map(item => {
+      // Kiểm tra xem đường dẫn hiện tại có phải là của menu cha hoặc con
+      const isParentOrChildActive = currentPath === item.path || 
+        currentPath.startsWith(`${item.path}/`) ||
+        (item.children?.some(child => 
+          currentPath === child.path || 
+          currentPath.startsWith(`${child.path}/`)
+        ));
+      
+      // Chỉ mở menu nếu là menu cha và đường dẫn phù hợp
+      if (item.children && isParentOrChildActive) {
+        return { ...item, isOpen: true };
+      }
+      
+      return { ...item, isOpen: item.isOpen || false };
+    }));
+  }, [location.pathname]);
   
   const handleLogout = () => {
     logout();
@@ -68,8 +104,29 @@ const AdminLayout = () => {
       if (i === index && item.children) {
         return { ...item, isOpen: !item.isOpen };
       }
+      // Đóng tất cả các submenu khác khi mở một submenu mới
+      if (i !== index && item.children) {
+        return { ...item, isOpen: false };
+      }
       return item;
     }));
+  };
+
+  // Kiểm tra xem một mục menu có active hay không
+  const isMenuItemActive = (item: MenuItem) => {
+    const currentPath = location.pathname;
+    
+    if (!item.children) {
+      // Đối với menu không có con, active khi đường dẫn khớp hoặc là con của đường dẫn
+      return currentPath === item.path || 
+             currentPath.startsWith(`${item.path}/`);
+    } else {
+      // Đối với menu có con, kiểm tra xem con nào active
+      return item.children.some(child => 
+        currentPath === child.path || 
+        currentPath.startsWith(`${child.path}/`)
+      );
+    }
   };
 
   // Hàm render các mục menu
@@ -80,7 +137,7 @@ const AdminLayout = () => {
           <>
             <button
               onClick={() => toggleSubmenu(index)}
-              className={`flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md group transition duration-150 ${item.isOpen ? 'bg-blue-50 text-blue-600' : ''}`}
+              className={`flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md group transition duration-150 ${item.isOpen ? 'bg-blue-50 text-blue-600' : ''} ${isMenuItemActive(item) && !item.isOpen ? 'bg-blue-50/50 text-blue-600/80' : ''}`}
             >
               <div className="flex items-center">
                 <span className="mr-3 text-gray-500 group-hover:text-blue-600">{item.icon}</span>
@@ -99,17 +156,22 @@ const AdminLayout = () => {
                     to={child.path}
                     onClick={() => isMobile && setSidebarOpen(false)}
                     className={({ isActive }) => 
-                      `flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-md group transition duration-150 ${isActive ? 'bg-gray-100 text-gray-900 font-medium' : ''}`
+                      `flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-md group transition duration-150 ${
+                        isActive || location.pathname.startsWith(`${child.path}/`) ? 'bg-gray-100 text-gray-900 font-medium' : ''
+                      }`
                     }
                   >
-                    {({ isActive }) => (
-                      <>
-                        <span className="w-4 h-4 mr-3 flex items-center justify-center">
-                          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-600' : 'bg-gray-400'}`}></span>
-                        </span>
-                        {child.title}
-                      </>
-                    )}
+                    {({ isActive }) => {
+                      const childActive = isActive || location.pathname.startsWith(`${child.path}/`);
+                      return (
+                        <>
+                          <span className="w-4 h-4 mr-3 flex items-center justify-center">
+                            <span className={`w-1.5 h-1.5 rounded-full ${childActive ? 'bg-blue-600' : 'bg-gray-400'}`}></span>
+                          </span>
+                          {child.title}
+                        </>
+                      );
+                    }}
                   </NavLink>
                 ))}
               </div>
@@ -119,7 +181,12 @@ const AdminLayout = () => {
           <NavLink
             to={item.path}
             onClick={() => isMobile && setSidebarOpen(false)}
-            className={({ isActive }) => `flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md group transition duration-150 ${isActive ? 'bg-blue-50 text-blue-600' : ''}`}
+            className={({ isActive }) => 
+              `flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md group transition duration-150 ${
+                isActive ? 'bg-blue-50 text-blue-600' : ''
+              }`
+            }
+            end
           >
             <span className="mr-3 text-gray-500 group-hover:text-blue-600">{item.icon}</span>
             {item.title}
@@ -195,10 +262,6 @@ const AdminLayout = () => {
               </button>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-700 focus:outline-none relative">
-                <Bell size={20} />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
               <div className="relative">
                 <button className="flex items-center space-x-2 focus:outline-none">
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
@@ -206,7 +269,6 @@ const AdminLayout = () => {
                   </div>
                   <div className="hidden md:flex items-center">
                     <span className="text-sm font-medium">{user?.name || 'User'}</span>
-                    <ChevronDown size={16} className="ml-1 text-gray-500" />
                   </div>
                 </button>
               </div>

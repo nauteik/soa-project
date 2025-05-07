@@ -1,35 +1,28 @@
 package com.example.backend.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
+/**
+ * Adapter để chuyển hướng các phương thức lưu trữ file từ FileStorageService sang S3StorageService
+ * Điều này giúp giữ backward compatibility với code cũ nhưng sử dụng S3 để lưu trữ
+ */
 @Service
 public class FileStorageService {
 
-    private final Path rootLocation;
+    private final S3StorageService s3StorageService;
 
-    public FileStorageService() {
-        // Create the uploads/images directory in the project root
-        String uploadPath = System.getProperty("user.dir") + "/uploads/images";
-        this.rootLocation = Paths.get(uploadPath);
-        try {
-            Files.createDirectories(rootLocation);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not initialize storage location", e);
-        }
+    @Autowired
+    public FileStorageService(S3StorageService s3StorageService) {
+        this.s3StorageService = s3StorageService;
     }
 
     /**
      * Store a file with a generated unique filename
      * @param file The file to store
-     * @return The filename of the stored file
+     * @return The filename extracted from S3 URL
      */
     public String store(MultipartFile file) {
         try {
@@ -37,27 +30,11 @@ public class FileStorageService {
                 throw new RuntimeException("Failed to store empty file");
             }
             
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = originalFilename != null ? 
-                originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            // Sử dụng S3StorageService để lưu trữ
+            String fullUrl = s3StorageService.store(file);
             
-            // Generate a unique filename to avoid collisions
-            String newFilename = UUID.randomUUID().toString() + fileExtension;
-            
-            Path destinationFile = this.rootLocation.resolve(
-                Paths.get(newFilename))
-                .normalize().toAbsolutePath();
-            
-            // Check that the destination is inside the target directory
-            if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                throw new RuntimeException("Cannot store file outside current directory");
-            }
-            
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-            }
-            
-            return newFilename;
+            // Trích xuất tên file từ URL đầy đủ
+            return extractFilenameFromUrl(fullUrl);
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file", e);
         }
@@ -75,19 +52,10 @@ public class FileStorageService {
                 throw new RuntimeException("Failed to store empty file");
             }
             
-            Path destinationFile = this.rootLocation.resolve(
-                Paths.get(filename))
-                .normalize().toAbsolutePath();
+            // Sử dụng S3StorageService để lưu trữ
+            String fullUrl = s3StorageService.storeWithName(file, filename);
             
-            // Check that the destination is inside the target directory
-            if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                throw new RuntimeException("Cannot store file outside current directory");
-            }
-            
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-            }
-            
+            // Chỉ trả về tên file để giữ tương thích với interface cũ
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file", e);
@@ -100,11 +68,16 @@ public class FileStorageService {
      * @return true if successful, false otherwise
      */
     public boolean delete(String filename) {
-        try {
-            Path file = rootLocation.resolve(filename);
-            return Files.deleteIfExists(file);
-        } catch (IOException e) {
-            return false;
-        }
+        // Chuyển hướng sang S3StorageService
+        return s3StorageService.delete(filename);
+    }
+    
+    /**
+     * Trích xuất tên file từ URL đầy đủ của S3
+     * @param url URL đầy đủ
+     * @return Tên file (phần cuối cùng của URL)
+     */
+    private String extractFilenameFromUrl(String url) {
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 }

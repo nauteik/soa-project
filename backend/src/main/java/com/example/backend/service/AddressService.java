@@ -34,5 +34,13 @@ public interface AddressService {
      * Đặt địa chỉ mặc định
      */
     AddressDto setDefaultAddress(Long id);
+    
+    /**
+     * Lấy danh sách địa chỉ của một người dùng theo ID (dành cho quản trị viên)
+     * 
+     * @param userId ID của người dùng
+     * @return Danh sách địa chỉ của người dùng
+     */
+    List<AddressDto> getUserAddressesByUserId(Long userId);
    
 } 

@@ -157,7 +157,7 @@ export const getProductsByCategorySlug = async (params: GetProductsByCategorySlu
 
   // Fixed endpoint to match the backend controller mapping
   const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/category/slug/${categorySlug}?${queryParams.toString()}`;
-  
+  console.log('URL:', url);
   const response = await fetch(url, {
     method: 'GET',
     headers: DEFAULT_HEADERS,

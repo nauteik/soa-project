@@ -10,6 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,6 +31,10 @@ public class DataLoader implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final UserAddressRepository userAddressRepository;
     // Currency conversion rate (1 USD = 24,000 VND)
     
     // Base URL for static images
@@ -44,8 +50,17 @@ public class DataLoader implements CommandLineRunner {
         // Create user
         log.info("Creating user...");
         createUser();
+        
+        log.info("Creating default users...");
+        createDefaultUsers();
+        
         if (isDataAlreadyLoaded()) {
-            log.info("Database already contains data, skipping data load");
+            log.info("Database already contains data, skipping product data load");
+            
+            // Create sample orders even if products are already loaded
+            log.info("Creating sample orders...");
+            createSampleOrders();
+            
             return;
         }
         
@@ -64,11 +79,13 @@ public class DataLoader implements CommandLineRunner {
             log.info("Creating products...");
             List<Product> products = createProducts(brands, categories);
             
-
-
             // Create product images
             log.info("Creating product images...");
             createProductImages(products);
+            
+            // Create sample orders after products are loaded
+            log.info("Creating sample orders...");
+            createSampleOrders();
             
             log.info("Sample data loaded successfully!");
         } catch (Exception e) {
@@ -141,31 +158,37 @@ public class DataLoader implements CommandLineRunner {
         Category laptops = new Category()
                 .setName("Laptops")
                 .setSlug("laptops")
+                .setImageUrl("laptop.png")
                 .setDescription("All types of laptops");
         
         Category mouse = new Category()
                 .setName("Mouse")
                 .setSlug("mouses")
+                .setImageUrl("mouse.png")
                 .setDescription("Computer mice for laptops");
         
         Category keyboard = new Category()
                 .setName("Keyboard")
                 .setSlug("keyboards")
+                .setImageUrl("keyboard.png")
                 .setDescription("External keyboards for laptops");
         
         Category monitor = new Category()
                 .setName("Monitor")
                 .setSlug("monitors")
+                .setImageUrl("monitor.png")
                 .setDescription("External monitors for laptops");
         
         Category usbHub = new Category()
                 .setName("USB Hub")
                 .setSlug("hubs")
+                .setImageUrl("hub.png")
                 .setDescription("USB hubs and docking stations");
         
         Category charger = new Category()
                 .setName("Charger")
                 .setSlug("chargers")
+                .setImageUrl("charger.png")
                 .setDescription("Laptop chargers and power adapters");
         
         // Save main categories first to get IDs
@@ -176,18 +199,21 @@ public class DataLoader implements CommandLineRunner {
         Category gamingLaptops = new Category()
                 .setName("Gaming Laptops")
                 .setSlug("gaming-laptops")
+                .setImageUrl("laptop.png")
                 .setDescription("Laptops designed for gaming")
                 .setParent(laptops);
         
         Category businessLaptops = new Category()
                 .setName("Business Laptops")
                 .setSlug("business-laptops")
+                .setImageUrl("laptop.png")
                 .setDescription("Laptops for business and professional use")
                 .setParent(laptops);
         
         Category ultrabooks = new Category()
                 .setName("Ultrabooks")
                 .setSlug("ultrabooks")
+                .setImageUrl("laptop.png")
                 .setDescription("Thin and lightweight laptops")
                 .setParent(laptops);
         
@@ -800,10 +826,7 @@ public class DataLoader implements CommandLineRunner {
                         ports.add("SD Card Reader");
                     }
                 }
-                specs.put("power_delivery_w", 60 + (i % 5) * 10);
-                specs.put("max_display_resolution", portCount > 6 ? "4K@60Hz" : "1080p@60Hz");
             }
-            
             specs.put("ports", ports);
             
             List<String> features = new ArrayList<>();
@@ -1121,5 +1144,438 @@ public class DataLoader implements CommandLineRunner {
         }
         
         return name + " - " + category.getName();
+    }
+
+    /**
+     * Create default users with different roles
+     */
+    private void createDefaultUsers() {
+        // Kiểm tra nếu đã có users
+        if (userRepository.count() > 1) {
+            log.info("Users already exist, skipping default users creation");
+            return;
+        }
+        
+        // Tạo một vài users mặc định với vai trò khác nhau
+        List<User> defaultUsers = new ArrayList<>();
+        
+        // User thường
+        User regularUser = new User();
+        regularUser.setName("Nguyễn Văn A");
+        regularUser.setEmail("customer@gmail.com");
+        regularUser.setPassword(passwordEncoder.encode("123456"));
+        regularUser.setMobileNumber("0987654321");
+        regularUser.setRole(UserRole.USER);
+        regularUser.setCreatedAt(LocalDateTime.now());
+        regularUser.setIsEnabled(true);
+        defaultUsers.add(regularUser);
+        
+        // Nhân viên bán hàng
+        User staffUser = new User();
+        staffUser.setName("Trần Văn B");
+        staffUser.setEmail("staff@gmail.com");
+        staffUser.setPassword(passwordEncoder.encode("123456"));
+        staffUser.setMobileNumber("0912345678");
+        staffUser.setRole(UserRole.ORDER_STAFF);
+        staffUser.setCreatedAt(LocalDateTime.now());
+        staffUser.setIsEnabled(true);
+        defaultUsers.add(staffUser);
+        
+        // Thêm một vài user khác
+        User user1 = new User();
+        user1.setName("Lê Thị C");
+        user1.setEmail("user1@gmail.com");
+        user1.setPassword(passwordEncoder.encode("123456"));
+        user1.setMobileNumber("0978123456");
+        user1.setRole(UserRole.USER);
+        user1.setCreatedAt(LocalDateTime.now());
+        user1.setIsEnabled(true);
+        defaultUsers.add(user1);
+        
+        User user2 = new User();
+        user2.setName("Phạm Văn D");
+        user2.setEmail("user2@gmail.com");
+        user2.setPassword(passwordEncoder.encode("123456"));
+        user2.setMobileNumber("0909123456");
+        user2.setRole(UserRole.USER);
+        user2.setCreatedAt(LocalDateTime.now());
+        user2.setIsEnabled(true);
+        defaultUsers.add(user2);
+        
+        // Lưu tất cả users
+        userRepository.saveAll(defaultUsers);
+        
+        // Tạo địa chỉ mặc định cho mỗi user
+        createDefaultAddresses(defaultUsers);
+        
+        log.info("Created {} default users", defaultUsers.size());
+    }
+
+    /**
+     * Tạo địa chỉ mặc định cho danh sách users
+     */
+    private void createDefaultAddresses(List<User> users) {
+        List<UserAddress> addresses = new ArrayList<>();
+        
+        // Địa chỉ cho Nguyễn Văn A
+        User regularUser = users.get(0);
+        UserAddress address1 = new UserAddress();
+        address1.setUser(regularUser);
+        address1.setFullName(regularUser.getName());
+        address1.setMobileNo(regularUser.getMobileNumber());
+        address1.setStreet("123 Đường Nguyễn Văn Linh");
+        address1.setWard("Phường Tân Phong");
+        address1.setDistrict("Quận 7");
+        address1.setCity("TP Hồ Chí Minh");
+        address1.setCountry("Việt Nam");
+        address1.setPostalCode("70000");
+        address1.setFullAddress("123 Đường Nguyễn Văn Linh, Phường Tân Phong, Quận 7, TP Hồ Chí Minh");
+        address1.setIsDefault(true);
+        address1.setCreatedAt(LocalDateTime.now());
+        addresses.add(address1);
+        
+        // Địa chỉ cho Trần Văn B
+        User staffUser = users.get(1);
+        UserAddress address2 = new UserAddress();
+        address2.setUser(staffUser);
+        address2.setFullName(staffUser.getName());
+        address2.setMobileNo(staffUser.getMobileNumber());
+        address2.setStreet("456 Đường Lê Văn Việt");
+        address2.setWard("Phường Hiệp Phú");
+        address2.setDistrict("Quận 9");
+        address2.setCity("TP Hồ Chí Minh");
+        address2.setCountry("Việt Nam");
+        address2.setPostalCode("70000");
+        address2.setFullAddress("456 Đường Lê Văn Việt, Phường Hiệp Phú, Quận 9, TP Hồ Chí Minh");
+        address2.setIsDefault(true);
+        address2.setCreatedAt(LocalDateTime.now());
+        addresses.add(address2);
+        
+        // Địa chỉ cho Lê Thị C
+        User user1 = users.get(2);
+        UserAddress address3 = new UserAddress();
+        address3.setUser(user1);
+        address3.setFullName(user1.getName());
+        address3.setMobileNo(user1.getMobileNumber());
+        address3.setStreet("789 Đường Cách Mạng Tháng 8");
+        address3.setWard("Phường 5");
+        address3.setDistrict("Quận 3");
+        address3.setCity("TP Hồ Chí Minh");
+        address3.setCountry("Việt Nam");
+        address3.setPostalCode("70000");
+        address3.setFullAddress("789 Đường Cách Mạng Tháng 8, Phường 5, Quận 3, TP Hồ Chí Minh");
+        address3.setIsDefault(true);
+        address3.setCreatedAt(LocalDateTime.now());
+        addresses.add(address3);
+        
+        // Địa chỉ cho Phạm Văn D
+        User user2 = users.get(3);
+        UserAddress address4 = new UserAddress();
+        address4.setUser(user2);
+        address4.setFullName(user2.getName());
+        address4.setMobileNo(user2.getMobileNumber());
+        address4.setStreet("101 Đường Nguyễn Hữu Cảnh");
+        address4.setWard("Phường 22");
+        address4.setDistrict("Quận Bình Thạnh");
+        address4.setCity("TP Hồ Chí Minh");
+        address4.setCountry("Việt Nam");
+        address4.setPostalCode("70000");
+        address4.setFullAddress("101 Đường Nguyễn Hữu Cảnh, Phường 22, Quận Bình Thạnh, TP Hồ Chí Minh");
+        address4.setIsDefault(true);
+        address4.setCreatedAt(LocalDateTime.now());
+        addresses.add(address4);
+        
+        // Thêm địa chỉ thứ 2 cho Nguyễn Văn A
+        UserAddress address5 = new UserAddress();
+        address5.setUser(regularUser);
+        address5.setFullName(regularUser.getName());
+        address5.setMobileNo(regularUser.getMobileNumber());
+        address5.setStreet("202 Đường Võ Văn Ngân");
+        address5.setWard("Phường Bình Thọ");
+        address5.setDistrict("Quận Thủ Đức");
+        address5.setCity("TP Hồ Chí Minh");
+        address5.setCountry("Việt Nam");
+        address5.setPostalCode("70000");
+        address5.setFullAddress("202 Đường Võ Văn Ngân, Phường Bình Thọ, Quận Thủ Đức, TP Hồ Chí Minh");
+        address5.setIsDefault(false);
+        address5.setCreatedAt(LocalDateTime.now());
+        addresses.add(address5);
+        
+        // Lưu tất cả địa chỉ
+        userAddressRepository.saveAll(addresses);
+        
+        log.info("Created {} default addresses", addresses.size());
+    }
+
+    /**
+     * Create sample orders with different statuses
+     */
+    private void createSampleOrders() {
+        // Kiểm tra nếu đã có orders
+        if (orderRepository.count() > 0) {
+            log.info("Orders already exist, skipping sample orders creation");
+            return;
+        }
+        
+        // Lấy các users đã tạo
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            log.warn("No users found, cannot create sample orders");
+            return;
+        }
+        
+        // Lấy một số sản phẩm ngẫu nhiên 
+        List<Product> products = productRepository.findAll();
+        if (products.isEmpty()) {
+            log.warn("No products found, cannot create sample orders");
+            return;
+        }
+        
+        // Tạo một số đơn hàng mẫu với các trạng thái khác nhau
+        List<Order> orders = new ArrayList<>();
+        
+        // Thời gian tạo đơn hàng (để đơn hàng có các mốc thời gian khác nhau)
+        LocalDateTime[] orderDates = {
+            LocalDateTime.now().minusDays(30),
+            LocalDateTime.now().minusDays(15),
+            LocalDateTime.now().minusDays(7),
+            LocalDateTime.now().minusDays(3),
+            LocalDateTime.now().minusDays(1),
+            LocalDateTime.now().minusHours(12),
+            LocalDateTime.now().minusHours(6),
+            LocalDateTime.now().minusHours(2)
+        };
+        
+        // Tạo các đơn hàng với các trạng thái khác nhau
+        for (int i = 0; i < 15; i++) {
+            User user = users.get(i % users.size());
+            List<UserAddress> userAddresses = userAddressRepository.findByUserOrderByIsDefaultDesc(user);
+            
+            if (userAddresses.isEmpty()) {
+                log.warn("No addresses found for user {}, skipping order creation", user.getEmail());
+                continue;
+            }
+            
+            UserAddress shippingAddress = userAddresses.get(0); // Dùng địa chỉ đầu tiên
+            
+            // Chọn trạng thái đơn hàng dựa trên chỉ số
+            OrderStatus status;
+            PaymentMethod paymentMethod;
+            PaymentStatus paymentStatus;
+            
+            if (i % 7 == 0) {
+                status = OrderStatus.DELIVERED;
+                paymentMethod = PaymentMethod.CREDIT_CARD;
+                paymentStatus = PaymentStatus.PAID;
+            } else if (i % 7 == 1) {
+                status = OrderStatus.SHIPPING;
+                paymentMethod = PaymentMethod.COD;
+                paymentStatus = PaymentStatus.COD_PENDING;
+            } else if (i % 7 == 2) {
+                status = OrderStatus.PROCESSING;
+                paymentMethod = PaymentMethod.BANK_TRANSFER;
+                paymentStatus = PaymentStatus.PAID;
+            } else if (i % 7 == 3) {
+                status = OrderStatus.CONFIRMED;
+                paymentMethod = PaymentMethod.E_WALLET;
+                paymentStatus = PaymentStatus.PAID;
+            } else if (i % 7 == 4) {
+                status = OrderStatus.PENDING;
+                paymentMethod = PaymentMethod.VNPAY;
+                paymentStatus = PaymentStatus.PENDING;
+            } else if (i % 7 == 5) {
+                status = OrderStatus.CANCELED;
+                paymentMethod = PaymentMethod.MOMO;
+                paymentStatus = PaymentStatus.FAILED;
+            } else {
+                status = OrderStatus.FULLY_RETURNED;
+                paymentMethod = PaymentMethod.CREDIT_CARD;
+                paymentStatus = PaymentStatus.REFUNDED;
+            }
+            
+            LocalDateTime orderDate = orderDates[i % orderDates.length];
+            
+            // Tạo đơn hàng và đặt orderNumber độc nhất
+            Order order = new Order();
+            order.setUser(user);
+            order.setShippingAddress(shippingAddress);
+            order.setStatus(status);
+            order.setPaymentMethod(paymentMethod);
+            order.setPaymentStatus(paymentStatus);
+            order.setNotes("Ghi chú đơn hàng #" + (i + 1));
+            order.setCreatedAt(orderDate);
+            order.setUpdatedAt(orderDate);
+            
+            // Tạo order number độc nhất dựa trên thời gian và một số ngẫu nhiên để đảm bảo không trùng lặp
+            String customOrderNumber = "OD" + orderDate.format(DateTimeFormatter.ofPattern("yyMMdd")) + 
+                                      String.format("%04d", i + 1) + 
+                                      String.format("%03d", random.nextInt(1000));
+            order.setOrderNumber(customOrderNumber);
+            
+            // Thêm sản phẩm vào đơn hàng (2-4 sản phẩm)
+            int numItems = 2 + random.nextInt(3);
+            List<OrderItem> orderItems = new ArrayList<>();
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            
+            for (int j = 0; j < numItems; j++) {
+                Product product = products.get(random.nextInt(products.size()));
+                int quantity = 1 + random.nextInt(3);
+                
+                // Tính giá sau khi giảm giá (nếu có)
+                BigDecimal discountedPrice = product.getPrice();
+                Float discount = product.getDiscount();
+                if (discount != null && discount > 0) {
+                    BigDecimal discountAmount = product.getPrice().multiply(BigDecimal.valueOf(discount / 100.0));
+                    discountedPrice = product.getPrice().subtract(discountAmount);
+                }
+                
+                // Tính tổng tiền của sản phẩm
+                BigDecimal subtotal = discountedPrice.multiply(BigDecimal.valueOf(quantity));
+                totalAmount = totalAmount.add(subtotal);
+                
+                // Trạng thái của OrderItem phù hợp với Order
+                OrderItemStatus itemStatus;
+                if (status == OrderStatus.DELIVERED) {
+                    itemStatus = OrderItemStatus.DELIVERED;
+                } else if (status == OrderStatus.SHIPPING) {
+                    itemStatus = OrderItemStatus.SHIPPING;
+                } else if (status == OrderStatus.PROCESSING) {
+                    itemStatus = OrderItemStatus.PROCESSING;
+                } else if (status == OrderStatus.CONFIRMED) {
+                    itemStatus = OrderItemStatus.CONFIRMED;
+                } else if (status == OrderStatus.PENDING) {
+                    itemStatus = OrderItemStatus.PENDING;
+                } else if (status == OrderStatus.CANCELED) {
+                    itemStatus = OrderItemStatus.CANCELED;
+                } else if (status == OrderStatus.FULLY_RETURNED) {
+                    itemStatus = OrderItemStatus.RETURNED;
+                } else {
+                    itemStatus = OrderItemStatus.PENDING;
+                }
+                
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setProduct(product);
+                orderItem.setProductName(product.getName());
+                orderItem.setPrice(product.getPrice());
+                orderItem.setDiscount(product.getDiscount());
+                orderItem.setQuantity(quantity);
+                orderItem.setSubtotal(subtotal);
+                orderItem.setStatus(itemStatus);
+                orderItem.setUpdatedAt(orderDate);
+                
+                orderItems.add(orderItem);
+            }
+            
+            // Cập nhật tổng tiền đơn hàng
+            order.setTotalAmount(totalAmount);
+            
+            // Lưu order trước để có ID
+            Order savedOrder = orderRepository.save(order);
+            
+            // Tạo lịch sử trạng thái ban đầu trước khi thêm các lịch sử khác
+            OrderStatusHistory initialStatus = new OrderStatusHistory();
+            initialStatus.setOrder(savedOrder);
+            initialStatus.setStatus(OrderStatus.PENDING);
+            initialStatus.setCreatedAt(orderDate);
+            initialStatus.setNotes("Đơn hàng được tạo");
+            orderStatusHistoryRepository.save(initialStatus);
+            
+            // Set order cho orderItems và lưu
+            orderItems.forEach(item -> item.setOrder(savedOrder));
+            orderItemRepository.saveAll(orderItems);
+            
+            // Tạo lịch sử trạng thái đơn hàng
+            createOrderStatusHistory(savedOrder, status, orderDate);
+            
+            orders.add(savedOrder);
+        }
+        
+        log.info("Created {} sample orders", orders.size());
+    }
+
+    /**
+     * Tạo lịch sử trạng thái đơn hàng dựa trên trạng thái cuối cùng
+     */
+    private void createOrderStatusHistory(Order order, OrderStatus finalStatus, LocalDateTime orderCreatedTime) {
+        List<OrderStatusHistory> statusHistories = new ArrayList<>();
+        LocalDateTime statusTime = orderCreatedTime;
+        
+        // Bỏ qua trạng thái PENDING ban đầu vì đã được tạo trong createSampleOrders()
+        
+        // Nếu trạng thái không phải PENDING, thêm các trạng thái trung gian
+        if (finalStatus != OrderStatus.PENDING) {
+            // CONFIRMED
+            statusTime = statusTime.plusHours(2);
+            OrderStatusHistory confirmedStatus = new OrderStatusHistory();
+            confirmedStatus.setOrder(order);
+            confirmedStatus.setStatus(OrderStatus.CONFIRMED);
+            confirmedStatus.setCreatedAt(statusTime);
+            confirmedStatus.setNotes("Đơn hàng đã được xác nhận");
+            statusHistories.add(confirmedStatus);
+            
+            if (finalStatus != OrderStatus.CONFIRMED && finalStatus != OrderStatus.CANCELED) {
+                // PROCESSING
+                statusTime = statusTime.plusHours(6);
+                OrderStatusHistory processingStatus = new OrderStatusHistory();
+                processingStatus.setOrder(order);
+                processingStatus.setStatus(OrderStatus.PROCESSING);
+                processingStatus.setCreatedAt(statusTime);
+                processingStatus.setNotes("Đơn hàng đang được xử lý");
+                statusHistories.add(processingStatus);
+                
+                if (finalStatus != OrderStatus.PROCESSING && finalStatus != OrderStatus.CANCELED) {
+                    // SHIPPING
+                    statusTime = statusTime.plusHours(12);
+                    OrderStatusHistory shippingStatus = new OrderStatusHistory();
+                    shippingStatus.setOrder(order);
+                    shippingStatus.setStatus(OrderStatus.SHIPPING);
+                    shippingStatus.setCreatedAt(statusTime);
+                    shippingStatus.setNotes("Đơn hàng đang được giao");
+                    statusHistories.add(shippingStatus);
+                    
+                    if (finalStatus == OrderStatus.DELIVERED || finalStatus == OrderStatus.FULLY_RETURNED 
+                        || finalStatus == OrderStatus.PARTIALLY_RETURNED) {
+                        // DELIVERED
+                        statusTime = statusTime.plusHours(24);
+                        OrderStatusHistory deliveredStatus = new OrderStatusHistory();
+                        deliveredStatus.setOrder(order);
+                        deliveredStatus.setStatus(OrderStatus.DELIVERED);
+                        deliveredStatus.setCreatedAt(statusTime);
+                        deliveredStatus.setNotes("Đơn hàng đã được giao thành công");
+                        statusHistories.add(deliveredStatus);
+                        
+                        if (finalStatus == OrderStatus.FULLY_RETURNED || finalStatus == OrderStatus.PARTIALLY_RETURNED) {
+                            // RETURNED
+                            statusTime = statusTime.plusHours(48);
+                            OrderStatusHistory returnedStatus = new OrderStatusHistory();
+                            returnedStatus.setOrder(order);
+                            returnedStatus.setStatus(finalStatus);
+                            returnedStatus.setCreatedAt(statusTime);
+                            returnedStatus.setNotes(finalStatus == OrderStatus.FULLY_RETURNED ? 
+                                                 "Đơn hàng đã được trả lại toàn bộ" : 
+                                                 "Đơn hàng đã được trả lại một phần");
+                            statusHistories.add(returnedStatus);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Trường hợp đơn hàng bị hủy
+        if (finalStatus == OrderStatus.CANCELED) {
+            statusTime = statusTime.plusHours(1);
+            OrderStatusHistory canceledStatus = new OrderStatusHistory();
+            canceledStatus.setOrder(order);
+            canceledStatus.setStatus(OrderStatus.CANCELED);
+            canceledStatus.setCreatedAt(statusTime);
+            canceledStatus.setNotes("Đơn hàng đã bị hủy");
+            statusHistories.add(canceledStatus);
+        }
+        
+        // Lưu lịch sử trạng thái nếu có
+        if (!statusHistories.isEmpty()) {
+            orderStatusHistoryRepository.saveAll(statusHistories);
+        }
     }
 }

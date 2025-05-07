@@ -623,6 +623,58 @@ const ProductCreatePage = () => {
                 <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Thông tin cơ bản</h2>
               </div>
               
+              <div className="grid grid-cols-1 gap-6 mb-6">
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                    Trạng thái bán hàng
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ms-3 text-sm font-medium text-gray-700">
+                        {formData.isActive ? 'Đang bán' : 'Ngừng bán'}
+                      </span>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.isActive 
+                      ? 'Sản phẩm sẽ được hiển thị và bán trên hệ thống' 
+                      : 'Sản phẩm ngừng bán sẽ không hiển thị cho khách hàng'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label htmlFor="featured" className="block text-sm font-medium text-gray-700">
+                    Sản phẩm nổi bật
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isFeatured}
+                        onChange={() => setFormData(prev => ({ ...prev, isFeatured: !prev.isFeatured }))}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ms-3 text-sm font-medium text-gray-700">
+                        {formData.isFeatured ? 'Nổi bật' : 'Bình thường'}
+                      </span>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.isFeatured 
+                      ? 'Sản phẩm sẽ được hiển thị trong mục sản phẩm nổi bật' 
+                      : 'Sản phẩm sẽ được hiển thị thông thường'}
+                  </p>
+                </div>
+              </div>
+              
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Tên sản phẩm <span className="text-red-500">*</span>
@@ -819,35 +871,6 @@ const ProductCreatePage = () => {
                   onChange={handleInputChange}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <input
-                    id="isActive"
-                    name="isActive"
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={handleCheckboxChange}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                    Đang bán
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="isFeatured"
-                    name="isFeatured"
-                    type="checkbox"
-                    checked={formData.isFeatured}
-                    onChange={handleCheckboxChange}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-700">
-                    Nổi bật
-                  </label>
-                </div>
               </div>
             </div>
 

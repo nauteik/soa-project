@@ -123,7 +123,17 @@ public class AddressServiceImpl implements AddressService {
         return AddressDto.fromEntity(address);
     }
 
-    
+    @Override
+    public List<AddressDto> getUserAddressesByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", userId));
+                
+        return addressRepository.findByUserId(userId)
+                .stream()
+                .map(AddressDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Lấy thông tin người dùng hiện tại từ SecurityContext
      */

@@ -136,14 +136,7 @@ const Header = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-6">
-          {/* Wishlist */}
-          <Link 
-            to="/wishlist" 
-            className="relative hidden md:block"
-            aria-label="Wishlist"
-          >
-            <Heart className="h-6 w-6 text-gray-700" />
-          </Link>
+        
 
           {/* Cart */}
           <div 

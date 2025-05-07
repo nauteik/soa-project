@@ -55,10 +55,6 @@ public class AddressDto {
     @Pattern(regexp = "^[0-9]*$", message = "Mã bưu điện chỉ được chứa số")
     @Size(max = 10, message = "Mã bưu điện không được vượt quá 10 ký tự")
     private String postalCode;
-    
-    private Double latitude;
-    private Double longitude;
-    private String placeId;
     private Boolean isDefault;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

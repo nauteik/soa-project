@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ENDPOINTS, DEFAULT_HEADERS } from '../config/api';
+import { handleApiError } from '../utils/errorHandler';
 
 // Định nghĩa các interfaces
 interface LoginCredentials {
@@ -50,25 +51,40 @@ const authService = {
       return response.data;
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
-      throw error;
+      throw new Error(handleApiError(error));
     }
   },
 
   // Lấy thông tin người dùng hiện tại
   getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>(`${ENDPOINTS.AUTH}/me`);
-    return response.data;
+    try {
+      const response = await api.get<User>(`${ENDPOINTS.AUTH}/me`);
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi lấy thông tin người dùng:', error);
+      throw new Error(handleApiError(error));
+    }
   },
 
   // Cập nhật thông tin cá nhân
   updateProfile: async (userData: Partial<User>): Promise<User> => {
-    const response = await api.put<User>(`${ENDPOINTS.AUTH}/update-profile`, userData);
-    return response.data;
+    try {
+      const response = await api.put<User>(`${ENDPOINTS.AUTH}/update-profile`, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi cập nhật thông tin cá nhân:', error);
+      throw new Error(handleApiError(error));
+    }
   },
 
   // Đổi mật khẩu
   changePassword: async (passwordData: { currentPassword: string; newPassword: string }): Promise<void> => {
-    await api.put(`${ENDPOINTS.AUTH}/update-password`, passwordData);
+    try {
+      await api.put(`${ENDPOINTS.AUTH}/update-password`, passwordData);
+    } catch (error) {
+      console.error('Lỗi đổi mật khẩu:', error);
+      throw new Error(handleApiError(error));
+    }
   },
 
   // Đăng xuất (xử lý phía client)

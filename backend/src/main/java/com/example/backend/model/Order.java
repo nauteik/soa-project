@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Entity
 @Table(name = "orders")
@@ -86,15 +88,10 @@ public class Order {
     }
     
     private String generateOrderNumber() {
-        // Tạo mã đơn hàng theo định dạng: OD + năm + tháng + ngày + giờ + phút + giây
         LocalDateTime now = LocalDateTime.now();
-        return String.format("OD%d%02d%02d%02d%02d%02d", 
-                now.getYear(), 
-                now.getMonthValue(), 
-                now.getDayOfMonth(),
-                now.getHour(),
-                now.getMinute(),
-                now.getSecond());
+        // Thêm số ngẫu nhiên 6 chữ số để tránh trùng lặp khi nhiều người dùng tạo cùng lúc
+        String randomNum = String.format("%03d", new Random().nextInt(999));
+        return "OD" + now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + randomNum;
     }
     
     // Phương thức để cập nhật trạng thái đơn hàng và lưu lịch sử

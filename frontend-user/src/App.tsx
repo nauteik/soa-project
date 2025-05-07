@@ -7,6 +7,7 @@ import MainLayout from './components/layout/MainLayout';
 import ProductPage from './pages/ProductPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import VerifyAccountPage from './pages/VerifyAccountPage';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import PrivateRoute from './components/common/PrivateRoute';
@@ -21,6 +22,8 @@ import OrdersPage from './pages/user/OrdersPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 const App: React.FC = () => {
   return (
@@ -37,6 +40,9 @@ const App: React.FC = () => {
               <Route path="/category/:slug" element={<ProductPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-account" element={<VerifyAccountPage />} />
               <Route path="/cart" element={<CartPage />} />
               
               {/* Định tuyến cho checkout và đơn hàng */}

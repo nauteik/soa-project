@@ -2,6 +2,7 @@ package com.example.backend.model;
 
 public enum UserRole {
     USER,
-    STAFF,
-    MANAGER
+    MANAGER,
+    ORDER_STAFF,
+    PRODUCT_STAFF
 } 

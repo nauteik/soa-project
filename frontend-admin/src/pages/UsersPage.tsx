@@ -1,4 +1,4 @@
-import { Search, Filter, Edit, Trash2, UserPlus, X, ArrowUp, ArrowDown, UserCog, UserCircle, Eye } from 'lucide-react';
+import { Search, Filter, Edit, Trash2, UserPlus, X, ArrowUp, ArrowDown, UserCircle, Eye, MoreVertical, CheckCircle, XCircle, ShieldAlert, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,11 +9,20 @@ import {
   deleteUser, 
   UserResponse 
 } from '../services/userApi';
+import { IMAGES_BASE_URL } from '../config/api';
+// Thêm các import mới cho Date Range Picker
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Box, TextField, Stack } from '@mui/material';
+import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/vi';
 
 interface FilterOptions {
   status: 'all' | 'active' | 'inactive';
-  role: 'all' | 'USER' | 'STAFF' | 'MANAGER';
-  joinDate: 'all' | 'today' | 'this_week' | 'this_month' | 'this_year';
+  role: 'all' | 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER';
+  // Thay đổi kiểu dữ liệu cho joinDate
+  dateRange: [Dayjs | null, Dayjs | null];
   sort: 'name_asc' | 'name_desc' | 'email_asc' | 'email_desc' | 'date_asc' | 'date_desc';
 }
 
@@ -29,11 +38,11 @@ const UsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Lọc và sắp xếp
+  // Lọc và sắp xếp - Cập nhật giá trị mặc định cho dateRange
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
     role: 'all',
-    joinDate: 'all',
+    dateRange: [null, null],
     sort: 'date_desc'
   });
 
@@ -94,7 +103,7 @@ const UsersPage = () => {
   };
 
   // Đổi vai trò người dùng
-  const handleChangeRole = async (id: number, newRole: 'USER' | 'STAFF' | 'MANAGER') => {
+  const handleChangeRole = async (id: number, newRole: 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER') => {
     try {
       await updateUserRole(id, newRole);
       // Cập nhật danh sách người dùng sau khi đổi vai trò
@@ -111,9 +120,11 @@ const UsersPage = () => {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'MANAGER':
-        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Quản trị viên</span>;
-      case 'STAFF':
-        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Nhân viên</span>;
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Quản lý</span>;
+      case 'ORDER_STAFF':
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Nhân viên đơn hàng</span>;
+      case 'PRODUCT_STAFF':
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Nhân viên sản phẩm</span>;
       case 'USER':
         return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Khách hàng</span>;
       default:
@@ -137,7 +148,7 @@ const UsersPage = () => {
     }
   };
 
-  // Lọc và sắp xếp người dùng
+  // Lọc và sắp xếp người dùng - Thay đổi phần kiểm tra dateRange
   const getFilteredAndSortedUsers = () => {
     return users
       .filter(user => {
@@ -156,26 +167,21 @@ const UsersPage = () => {
         // Lọc theo vai trò
         if (filterOptions.role !== 'all' && user.role !== filterOptions.role) return false;
         
-        // Lọc theo ngày tham gia
-        if (filterOptions.joinDate !== 'all') {
-          const userDate = new Date(user.createdAt);
-          const now = new Date();
+        // Lọc theo ngày tham gia - Sử dụng DateRange thay vì các tùy chọn cứng
+        const [startDate, endDate] = filterOptions.dateRange;
+        if (startDate || endDate) {
+          const userDate = dayjs(user.createdAt);
           
-          switch (filterOptions.joinDate) {
-            case 'today':
-              if (userDate.toDateString() !== now.toDateString()) return false;
-              break;
-            case 'this_week':
-              const weekStart = new Date(now);
-              weekStart.setDate(now.getDate() - now.getDay());
-              if (userDate < weekStart) return false;
-              break;
-            case 'this_month':
-              if (userDate.getMonth() !== now.getMonth() || userDate.getFullYear() !== now.getFullYear()) return false;
-              break;
-            case 'this_year':
-              if (userDate.getFullYear() !== now.getFullYear()) return false;
-              break;
+          if (startDate && userDate.isBefore(startDate, 'day')) {
+            return false;
+          }
+          
+          if (endDate) {
+            // Thêm 1 ngày vào endDate để bao gồm cả ngày cuối cùng
+            const adjustedEndDate = endDate.add(1, 'day');
+            if (userDate.isAfter(adjustedEndDate, 'day')) {
+              return false;
+            }
           }
         }
         
@@ -221,11 +227,12 @@ const UsersPage = () => {
     });
   };
   
+  // Đặt lại bộ lọc - Cập nhật dateRange thành [null, null]
   const resetFilters = () => {
     setFilterOptions({
       status: 'all',
       role: 'all',
-      joinDate: 'all',
+      dateRange: [null, null],
       sort: 'date_desc'
     });
     setSearchTerm('');
@@ -262,7 +269,7 @@ const UsersPage = () => {
       return (
         <img 
           className="h-10 w-10 rounded-full object-cover" 
-          src={user.profileImage} 
+          src={`${IMAGES_BASE_URL}${user.profileImage}`} 
           alt={user.name} 
         />
       );
@@ -274,6 +281,9 @@ const UsersPage = () => {
       </div>
     );
   };
+
+  // Kiểm tra xem có bộ lọc ngày nào đang được áp dụng không
+  const hasDateFilter = filterOptions.dateRange[0] !== null || filterOptions.dateRange[1] !== null;
 
   return (
     <>
@@ -315,7 +325,7 @@ const UsersPage = () => {
             </button>
             {(filterOptions.status !== 'all' || 
               filterOptions.role !== 'all' || 
-              filterOptions.joinDate !== 'all') && (
+              hasDateFilter) && (
               <button
                 onClick={resetFilters}
                 className="px-4 py-2 border border-gray-300 rounded-md text-red-600 flex items-center hover:bg-gray-50"
@@ -351,25 +361,69 @@ const UsersPage = () => {
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">Tất cả</option>
-                  <option value="MANAGER">Quản trị viên</option>
-                  <option value="STAFF">Nhân viên</option>
+                  <option value="MANAGER">Quản lý</option>
+                  <option value="ORDER_STAFF">Nhân viên đơn hàng</option>
+                  <option value="PRODUCT_STAFF">Nhân viên sản phẩm</option>
                   <option value="USER">Khách hàng</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tham gia</label>
-                <select
-                  value={filterOptions.joinDate}
-                  onChange={(e) => handleFilterChange('joinDate', e.target.value)}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">Tất cả thời gian</option>
-                  <option value="today">Hôm nay</option>
-                  <option value="this_week">Tuần này</option>
-                  <option value="this_month">Tháng này</option>
-                  <option value="this_year">Năm nay</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Ngày tham gia</label>
+                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                  <Stack spacing={3} direction="row" sx={{ width: '100%' }}>
+                    <Box sx={{ width: '48%' }}>
+                      <DatePicker
+                        label="Từ ngày"
+                        value={filterOptions.dateRange[0]}
+                        onChange={(newValue: Dayjs | null) => {
+                          const newRange: [Dayjs | null, Dayjs | null] = [
+                            newValue,
+                            filterOptions.dateRange[1]
+                          ];
+                          handleFilterChange('dateRange', newRange);
+                        }}
+                        slotProps={{
+                          textField: { 
+                            size: 'small',
+                            fullWidth: true,
+                            sx: { 
+                              '& .MuiInputBase-root': { 
+                                padding: '4px 10px' 
+                              }
+                            }
+                          }
+                        }}
+                        sx={{ width: '100%' }}
+                      />
+                    </Box>
+                    <Box sx={{ width: '48%' }}>
+                      <DatePicker
+                        label="Đến ngày"
+                        value={filterOptions.dateRange[1]}
+                        onChange={(newValue: Dayjs | null) => {
+                          const newRange: [Dayjs | null, Dayjs | null] = [
+                            filterOptions.dateRange[0],
+                            newValue
+                          ];
+                          handleFilterChange('dateRange', newRange);
+                        }}
+                        slotProps={{
+                          textField: { 
+                            size: 'small',
+                            fullWidth: true,
+                            sx: { 
+                              '& .MuiInputBase-root': { 
+                                padding: '4px 10px' 
+                              }
+                            }
+                          }
+                        }}
+                        sx={{ width: '100%' }}
+                      />
+                    </Box>
+                  </Stack>
+                </LocalizationProvider>
               </div>
             </div>
           </div>
@@ -489,27 +543,6 @@ const UsersPage = () => {
                           onClick={() => handleEdit(user.id)}
                         >
                           <Edit size={18} />
-                        </button>
-                        <button 
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Đổi quyền"
-                          onClick={() => {
-                            const newRole = user.role === 'USER' 
-                              ? 'STAFF' 
-                              : user.role === 'STAFF' 
-                                ? 'MANAGER' 
-                                : 'USER';
-                            handleChangeRole(user.id, newRole as 'USER' | 'STAFF' | 'MANAGER');
-                          }}
-                        >
-                          <UserCog size={18} />
-                        </button>
-                        <button 
-                          className="text-red-600 hover:text-red-900"
-                          title="Xóa"
-                          onClick={() => handleDelete(user.id)}
-                        >
-                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>

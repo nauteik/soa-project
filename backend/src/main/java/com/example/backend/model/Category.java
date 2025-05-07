@@ -2,6 +2,7 @@ package com.example.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,6 +39,20 @@ public class Category {
     
     private String description;
     
+    @Column(name = "image_url")
+    private String imageUrl;
+    
+    // Thêm getter/setter cho image_url để chuyển đổi json
+    @JsonProperty("image_url")
+    public String getImage_url() {
+        return imageUrl;
+    }
+    
+    @JsonProperty("image_url")
+    public void setImage_url(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @JsonIgnore
@@ -62,10 +77,22 @@ public class Category {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    // Getter để đổi tên thành created_at cho frontend
+    @JsonProperty("created_at")
+    public LocalDateTime getCreated_at() {
+        return createdAt;
+    }
+    
+    // Getter để đổi tên thành updated_at cho frontend
+    @JsonProperty("updated_at")
+    public LocalDateTime getUpdated_at() {
+        return updatedAt;
+    }
+    
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnore
+    @JsonProperty("specificationFields")
     private java.util.List<SpecificationField> specificationFields;
     
     @PrePersist

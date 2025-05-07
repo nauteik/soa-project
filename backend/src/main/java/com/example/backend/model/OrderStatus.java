@@ -6,10 +6,9 @@ public enum OrderStatus {
     PROCESSING("Đang xử lý"),
     SHIPPING("Đang giao hàng"),
     DELIVERED("Đã giao hàng"),
-    COMPLETED("Hoàn thành"),
-    CANCELED("Đã hủy"),
-    RETURNED("Đã trả hàng"),
-    FAILED_DELIVERY("Giao hàng thất bại");
+    PARTIALLY_RETURNED("Trả hàng một phần"),
+    FULLY_RETURNED("Trả hàng toàn bộ"),
+    CANCELED("Đã hủy");
     
     private final String displayName;
     

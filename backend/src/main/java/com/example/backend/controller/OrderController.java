@@ -12,6 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,10 +26,16 @@ public class OrderController {
      * Tạo đơn hàng mới
      */
     @PostMapping
-    public ResponseEntity<OrderResponseDTO> createOrder(@RequestBody CreateOrderDTO createOrderDTO) {
+    public ResponseEntity<?> createOrder(@RequestBody CreateOrderDTO createOrderDTO) {
         Long userId = SecurityUtils.getCurrentUserId();
         OrderResponseDTO order = orderService.createOrder(userId, createOrderDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(order);
+        
+        // Trả về response đơn giản hơn
+        Map<String, Object> response = new HashMap<>();
+        response.put("orderNumber", order.getOrderNumber());
+        response.put("success", true);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     /**
@@ -106,26 +114,5 @@ public class OrderController {
         }
     }
     
-    /**
-     * Cập nhật trạng thái đơn hàng (chỉ dành cho ADMIN)
-     */
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PutMapping("/{orderId}/status")
-    public ResponseEntity<OrderResponseDTO> updateOrderStatus(
-            @PathVariable Long orderId,
-            @RequestParam String status,
-            @RequestParam(required = false) String notes) {
-        try {
-            com.example.backend.model.OrderStatus orderStatus = 
-                    com.example.backend.model.OrderStatus.valueOf(status);
-            
-            OrderResponseDTO order = orderService.updateOrderStatus(orderId, orderStatus, notes);
-            return ResponseEntity.ok(order);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(null);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
+   
 } 

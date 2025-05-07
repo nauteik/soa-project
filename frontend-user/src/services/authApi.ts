@@ -1,25 +1,5 @@
 import { API_BASE_URL, ENDPOINTS, DEFAULT_HEADERS } from '../config/api';
-import { LoginRequest, RegisterRequest, AuthResponse, User } from '../types/auth';
-
-/**
- * Đăng ký người dùng mới
- */
-export const register = async (registerData: RegisterRequest): Promise<AuthResponse> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.AUTH}/register`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: DEFAULT_HEADERS,
-    body: JSON.stringify(registerData)
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Đăng ký thất bại');
-  }
-
-  return response.json();
-};
+import { LoginRequest, AuthResponse, User } from '../types/auth';
 
 /**
  * Đăng nhập người dùng

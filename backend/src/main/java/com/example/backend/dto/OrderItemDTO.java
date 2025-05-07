@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import com.example.backend.model.OrderItemStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,4 +20,6 @@ public class OrderItemDTO {
     private Float discount;
     private Integer quantity;
     private BigDecimal subtotal;
+    private OrderItemStatus status;
+    private String statusDisplayName;
 } 

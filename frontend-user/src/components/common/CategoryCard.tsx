@@ -25,7 +25,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         className
       )}
     >
-      <div className="flex items-center justify-center mb-3 w-12 h-12">
+      <div className="mb-3">
         {icon}
       </div>
       <h3 className="text-base font-medium">{title}</h3>

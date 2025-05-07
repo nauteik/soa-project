@@ -1,7 +1,9 @@
 package com.example.backend.service.impl;
 
 import com.example.backend.dto.AuthResponseDto;
+import com.example.backend.dto.ForgotPasswordDto;
 import com.example.backend.dto.PasswordUpdateDto;
+import com.example.backend.dto.ResetPasswordDto;
 import com.example.backend.dto.UserLoginDto;
 import com.example.backend.dto.UserRegistrationDto;
 import com.example.backend.dto.UserResponseDto;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.regex.Pattern;
 
@@ -26,6 +29,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
     
     // Pattern mật khẩu: không có khoảng trắng
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^\\S+$");
@@ -46,6 +51,58 @@ public class AuthServiceImpl implements AuthService {
     }
     
     @Override
+    @Transactional
+    public void registerUser(UserRegistrationDto registrationDto) {
+        // Kiểm tra email đã tồn tại chưa
+        if (userRepository.existsByEmail(registrationDto.getEmail())) {
+            throw new BadRequestException("Email đã được sử dụng");
+        }
+        
+        // Kiểm tra mật khẩu
+        validatePassword(registrationDto.getPassword());
+        
+        // Gửi email xác nhận đến người dùng
+        emailVerificationService.sendVerificationEmail(registrationDto);
+    }
+    
+    @Override
+    @Transactional
+    public boolean verifyEmail(String token) {
+        // Kiểm tra token có hợp lệ không
+        if (!emailVerificationService.isTokenValid(token)) {
+            return false;
+        }
+        
+        // Lấy thông tin đăng ký từ token
+        UserRegistrationDto registrationDto = emailVerificationService.getRegistrationData(token);
+        if (registrationDto == null) {
+            return false;
+        }
+        
+        // Kiểm tra email đã tồn tại chưa (nếu có người đăng ký trùng email trong thời gian chờ xác nhận)
+        if (userRepository.existsByEmail(registrationDto.getEmail())) {
+            throw new BadRequestException("Email đã được sử dụng");
+        }
+        
+        // Tạo user mới
+        User user = new User();
+        user.setName(registrationDto.getName());
+        user.setEmail(registrationDto.getEmail());
+        user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        user.setMobileNumber(registrationDto.getMobileNumber());
+        user.setRole(UserRole.USER); // Mặc định tất cả người dùng mới đều là USER
+        
+        // Lưu user vào DB
+        userRepository.save(user);
+        
+        // Xác nhận token để gửi email thông báo đăng ký thành công
+        emailVerificationService.confirmVerification(token);
+        
+        return true;
+    }
+    
+    @Override
+    @Deprecated
     public AuthResponseDto register(UserRegistrationDto registrationDto) {
         // Kiểm tra email đã tồn tại chưa
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
@@ -194,6 +251,53 @@ public class AuthServiceImpl implements AuthService {
         
         // Lưu thông tin đã cập nhật
         userRepository.save(user);
+    }
+    
+    @Override
+    public boolean forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        // Gửi email đặt lại mật khẩu
+        return passwordResetService.sendPasswordResetEmail(forgotPasswordDto.getEmail());
+    }
+    
+    @Override
+    public boolean validateResetPasswordToken(String token) {
+        // Kiểm tra token có hợp lệ không
+        return passwordResetService.isTokenValid(token);
+    }
+    
+    @Override
+    @Transactional
+    public boolean resetPassword(ResetPasswordDto resetPasswordDto) {
+        // Kiểm tra token có hợp lệ không
+        if (!passwordResetService.isTokenValid(resetPasswordDto.getToken())) {
+            return false;
+        }
+        
+        // Lấy email từ token
+        String email = passwordResetService.getEmailFromToken(resetPasswordDto.getToken());
+        if (email == null) {
+            return false;
+        }
+        
+        // Kiểm tra mật khẩu và xác nhận mật khẩu
+        if (!resetPasswordDto.getNewPassword().equals(resetPasswordDto.getConfirmPassword())) {
+            throw new BadRequestException("Mật khẩu xác nhận không khớp với mật khẩu mới");
+        }
+        
+        // Tìm user theo email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
+        
+        // Lưu thông tin đã cập nhật
+        userRepository.save(user);
+        
+        // Xác nhận token để xóa khỏi storage
+        passwordResetService.confirmPasswordReset(resetPasswordDto.getToken());
+        
+        return true;
     }
     
     /**

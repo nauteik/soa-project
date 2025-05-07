@@ -9,6 +9,7 @@ import { Brand } from '../../services/brandApi';
 import { SpecificationField } from '../../services/productApi';
 import { formatVND, formatDiscountedPrice } from '../../utils/formatters';
 import { toast } from 'sonner';
+import { IMAGES_BASE_URL } from '../../config/api';
 
 interface ProductFormData {
   name: string;
@@ -126,7 +127,7 @@ const ProductEditPage = () => {
         if (product.images && product.images.length > 0) {
           const imageList: ImagePreview[] = product.images.map(img => ({
             id: img.id,
-            url: img.image_url,
+            url: `${IMAGES_BASE_URL}${img.image_url}`,
             isMain: img.is_main,
             altText: img.alt_text || product.name,
             isExisting: true
@@ -265,7 +266,20 @@ const ProductEditPage = () => {
   // Xử lý thay đổi input
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Xử lý đặc biệt cho slug để đảm bảo đúng định dạng
+    if (name === 'slug') {
+      const formattedSlug = value
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Xóa ký tự đặc biệt
+        .replace(/\s+/g, '-') // Thay thế khoảng trắng bằng dấu gạch ngang
+        .replace(/--+/g, '-') // Thay thế nhiều dấu gạch ngang liên tiếp bằng một dấu
+        .trim(); // Loại bỏ khoảng trắng thừa
+      
+      setFormData(prev => ({ ...prev, [name]: formattedSlug }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   // Xử lý thay đổi checkbox
@@ -568,10 +582,33 @@ const ProductEditPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Kiểm tra dữ liệu
-    if (!formData.name || !formData.sku || !formData.price || !formData.quantityInStock || 
-        !formData.category_id || !formData.brand_id) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+    // Validate form
+    const errors = [];
+    
+    if (!formData.name.trim()) errors.push('Tên sản phẩm không được để trống');
+    if (!formData.sku.trim()) errors.push('Mã SKU không được để trống');
+    if (!formData.slug.trim()) errors.push('Slug không được để trống');
+    if (!formData.price) errors.push('Giá sản phẩm không được để trống');
+    if (!formData.category_id) errors.push('Vui lòng chọn danh mục');
+    if (!formData.brand_id) errors.push('Vui lòng chọn thương hiệu');
+    if (imagesPreviews.length === 0) errors.push('Vui lòng thêm ít nhất một hình ảnh');
+    
+    // Validate slug format
+    if (formData.slug.trim() && !/^[a-z0-9-]+$/.test(formData.slug)) {
+      errors.push('Slug chỉ được chứa chữ thường, số và dấu gạch ngang');
+    }
+    
+    if (errors.length > 0) {
+      toast.error(
+        <div>
+          <p className="font-medium">Vui lòng kiểm tra lại:</p>
+          <ul className="list-disc pl-4 mt-1">
+            {errors.map((err, i) => (
+              <li key={i} className="text-sm">{err}</li>
+            ))}
+          </ul>
+        </div>
+      );
       return;
     }
     
@@ -653,8 +690,8 @@ const ProductEditPage = () => {
       // Hiển thị thông báo thành công
       toast.success('Sản phẩm đã được cập nhật thành công!');
       
-      // Chuyển hướng về trang danh sách sản phẩm
-      navigate('/products');
+      // Không chuyển hướng về trang danh sách sản phẩm
+      // navigate('/products');
     } catch (error: any) {
       console.error('Lỗi khi cập nhật sản phẩm:', error);
       
@@ -710,6 +747,58 @@ const ProductEditPage = () => {
             <div className="space-y-6 lg:col-span-1">
               <div>
                 <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Thông tin cơ bản</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 mb-6">
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                    Trạng thái bán hàng
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ms-3 text-sm font-medium text-gray-700">
+                        {formData.isActive ? 'Đang bán' : 'Ngừng bán'}
+                      </span>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.isActive 
+                      ? 'Sản phẩm đang được bán trên hệ thống' 
+                      : 'Sản phẩm ngừng bán sẽ không hiển thị cho khách hàng'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label htmlFor="featured" className="block text-sm font-medium text-gray-700">
+                    Sản phẩm nổi bật
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isFeatured}
+                        onChange={() => setFormData(prev => ({ ...prev, isFeatured: !prev.isFeatured }))}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ms-3 text-sm font-medium text-gray-700">
+                        {formData.isFeatured ? 'Nổi bật' : 'Bình thường'}
+                      </span>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.isFeatured 
+                      ? 'Sản phẩm sẽ được hiển thị trong mục sản phẩm nổi bật' 
+                      : 'Sản phẩm sẽ được hiển thị thông thường'}
+                  </p>
+                </div>
               </div>
               
               <div>
@@ -908,35 +997,6 @@ const ProductEditPage = () => {
                   onChange={handleInputChange}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <input
-                    id="isActive"
-                    name="isActive"
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={handleCheckboxChange}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                    Đang bán
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="isFeatured"
-                    name="isFeatured"
-                    type="checkbox"
-                    checked={formData.isFeatured}
-                    onChange={handleCheckboxChange}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-700">
-                    Nổi bật
-                  </label>
-                </div>
               </div>
             </div>
 

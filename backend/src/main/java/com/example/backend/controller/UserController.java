@@ -47,12 +47,18 @@ public class UserController {
     @PutMapping("/{id}/role")
     public ResponseEntity<UserResponseDto> updateUserRole(
             @PathVariable Long id,
-            @RequestBody Map<String, UserRole> payload) {
-        UserRole role = payload.get("role");
-        if (role == null) {
+            @RequestBody Map<String, String> payload) {
+        String roleName = payload.get("role");
+        if (roleName == null || roleName.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(userService.updateUserRole(id, role));
+        
+        try {
+            UserRole role = UserRole.valueOf(roleName);
+            return ResponseEntity.ok(userService.updateUserRole(id, role));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
     
     @PutMapping("/{id}")

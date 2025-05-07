@@ -1,4 +1,5 @@
 import { API_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, IMAGES_BASE_URL } from '../config/api';
+import { handleApiError } from '../utils/errorHandler';
 
 // Định nghĩa các interfaces
 export interface SpecificationField {
@@ -71,92 +72,107 @@ export interface GetProductsParams {
  * Lấy tất cả sản phẩm với các tùy chọn lọc và phân trang
  */
 export const getProducts = async (params: GetProductsParams = {}): Promise<ProductsResponse> => {
-  const queryParams = new URLSearchParams();
-  
-  // Thêm các tham số vào URL query
-  if (params.skip !== undefined) queryParams.append('skip', params.skip.toString());
-  if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
-  if (params.category_id !== undefined) queryParams.append('category_id', params.category_id.toString());
-  
-  // Xử lý brand_id có thể là số hoặc mảng
-  if (params.brand_id !== undefined) {
-    if (Array.isArray(params.brand_id)) {
-      params.brand_id.forEach(id => 
-        queryParams.append('brand_id', id.toString())
-      );
-    } else {
-      queryParams.append('brand_id', params.brand_id.toString());
-    }
-  }
-  
-  // Bộ lọc giá
-  if (params.min_price !== undefined) queryParams.append('min_price', params.min_price.toString());
-  if (params.max_price !== undefined) queryParams.append('max_price', params.max_price.toString());
-  
-  // Các bộ lọc khác
-  if (params.search !== undefined) queryParams.append('search', params.search);
-  if (params.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
-  if (params.is_featured !== undefined) queryParams.append('is_featured', params.is_featured.toString());
-  if (params.sort !== undefined) queryParams.append('sort', params.sort);
-  
-  // Xử lý bộ lọc thông số kỹ thuật
-  if (params.specifications && Object.keys(params.specifications).length > 0) {
-    const filteredSpecs = Object.fromEntries(
-      Object.entries(params.specifications)
-        .filter(([_, values]) => values.length > 0)
-    );
+  try {
+    const queryParams = new URLSearchParams();
     
-    if (Object.keys(filteredSpecs).length > 0) {
-      const specsJson = JSON.stringify(filteredSpecs);
-      queryParams.append('specifications_json', specsJson);
+    // Thêm các tham số vào URL query
+    if (params.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params.category_id !== undefined) queryParams.append('category_id', params.category_id.toString());
+    
+    // Xử lý brand_id có thể là số hoặc mảng
+    if (params.brand_id !== undefined) {
+      if (Array.isArray(params.brand_id)) {
+        params.brand_id.forEach(id => 
+          queryParams.append('brand_id', id.toString())
+        );
+      } else {
+        queryParams.append('brand_id', params.brand_id.toString());
+      }
     }
-  }
+    
+    // Bộ lọc giá
+    if (params.min_price !== undefined) queryParams.append('min_price', params.min_price.toString());
+    if (params.max_price !== undefined) queryParams.append('max_price', params.max_price.toString());
+    
+    // Các bộ lọc khác
+    if (params.search !== undefined) queryParams.append('search', params.search);
+    if (params.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
+    if (params.is_featured !== undefined) queryParams.append('is_featured', params.is_featured.toString());
+    if (params.sort !== undefined) queryParams.append('sort', params.sort);
+    
+    // Xử lý bộ lọc thông số kỹ thuật
+    if (params.specifications && Object.keys(params.specifications).length > 0) {
+      const filteredSpecs = Object.fromEntries(
+        Object.entries(params.specifications)
+          .filter(([_, values]) => values.length > 0)
+      );
+      
+      if (Object.keys(filteredSpecs).length > 0) {
+        const specsJson = JSON.stringify(filteredSpecs);
+        queryParams.append('specifications_json', specsJson);
+      }
+    }
 
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}?${queryParams.toString()}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể lấy danh sách sản phẩm: ${response.statusText}`);
-  }
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}?${queryParams.toString()}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể lấy danh sách sản phẩm: ${response.statusText}`);
+    }
 
-  return response.json();
+    return response.json();
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+    throw new Error(handleApiError(error));
+  }
 };
 
 /**
  * Lấy thông tin chi tiết sản phẩm theo ID
  */
 export const getProductById = async (id: string | number): Promise<ProductDetail> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể lấy thông tin sản phẩm ID ${id}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể lấy thông tin sản phẩm ID ${id}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi lấy thông tin sản phẩm ID ${id}:`, error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
  * Xóa sản phẩm theo ID
  */
 export const deleteProductById = async (id: string | number): Promise<void> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}`;
-  
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể xóa sản phẩm ID ${id}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}`;
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể xóa sản phẩm ID ${id}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error(`Lỗi khi xóa sản phẩm ID ${id}:`, error);
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -164,18 +180,23 @@ export const deleteProductById = async (id: string | number): Promise<void> => {
  * Lấy danh sách thông số kỹ thuật của danh mục
  */
 export const getSpecificationFields = async (categoryId: number): Promise<{specificationFields: SpecificationField[]}> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.CATEGORIES}/${categoryId}/specification-fields`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể lấy thông số kỹ thuật cho danh mục ID ${categoryId}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.CATEGORIES}/${categoryId}/specification-fields`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể lấy thông số kỹ thuật cho danh mục ID ${categoryId}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi lấy thông số kỹ thuật cho danh mục ID ${categoryId}:`, error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
@@ -191,9 +212,9 @@ export const processImageUrl = (url: string): string => {
  * Tạo mới sản phẩm
  */
 export const createProduct = async (productData: FormData): Promise<ProductDetail> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}`;
-  
   try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}`;
+    
     const response = await fetch(url, {
       method: 'POST',
       body: productData,
@@ -241,7 +262,14 @@ export const createProduct = async (productData: FormData): Promise<ProductDetai
     return response.json();
   } catch (error) {
     console.error('Lỗi khi tạo sản phẩm:', error);
-    throw error;
+    
+    // Kiểm tra xem lỗi đã được xử lý chưa
+    if (error instanceof Error && !error.message.includes('Failed to fetch')) {
+      throw error; // Nếu lỗi đã được xử lý, ném lại
+    }
+    
+    // Nếu là lỗi "Failed to fetch" hoặc lỗi mạng khác, sử dụng hàm xử lý lỗi
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -249,78 +277,98 @@ export const createProduct = async (productData: FormData): Promise<ProductDetai
  * Cập nhật sản phẩm
  */
 export const updateProduct = async (id: string | number, productData: FormData): Promise<ProductDetail> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/update/${id}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    body: productData,
-    // Lưu ý: không gửi Content-Type header khi sử dụng FormData
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể cập nhật sản phẩm ID ${id}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/update/${id}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: productData,
+      // Lưu ý: không gửi Content-Type header khi sử dụng FormData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể cập nhật sản phẩm ID ${id}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật sản phẩm ID ${id}:`, error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
  * Cập nhật trạng thái sản phẩm (kích hoạt/hủy kích hoạt)
  */
 export const updateProductStatus = async (id: string | number, isActive: boolean): Promise<ProductDetail> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}/status`;
-  
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      ...DEFAULT_HEADERS,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ isActive })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể cập nhật trạng thái sản phẩm ID ${id}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}/status`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ isActive })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể cập nhật trạng thái sản phẩm ID ${id}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật trạng thái sản phẩm ID ${id}:`, error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
  * Cập nhật trạng thái nổi bật của sản phẩm
  */
 export const updateProductFeatured = async (id: string | number, isFeatured: boolean): Promise<ProductDetail> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}/featured`;
-  
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      ...DEFAULT_HEADERS,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ isFeatured })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể cập nhật trạng thái nổi bật của sản phẩm ID ${id}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${id}/featured`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ isFeatured })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể cập nhật trạng thái nổi bật của sản phẩm ID ${id}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật trạng thái nổi bật của sản phẩm ID ${id}:`, error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
  * Xóa hình ảnh sản phẩm
  */
 export const deleteProductImage = async (productId: string | number, imageId: number): Promise<void> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`;
-  
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể xóa hình ảnh ID ${imageId} của sản phẩm ID ${productId}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`;
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể xóa hình ảnh ID ${imageId} của sản phẩm ID ${productId}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error(`Lỗi khi xóa hình ảnh ID ${imageId} của sản phẩm ID ${productId}:`, error);
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -328,15 +376,20 @@ export const deleteProductImage = async (productId: string | number, imageId: nu
  * Đặt hình ảnh làm hình chính của sản phẩm
  */
 export const setMainProductImage = async (productId: string | number, imageId: number): Promise<void> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}/main`;
-  
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể đặt hình ảnh ID ${imageId} làm hình chính cho sản phẩm ID ${productId}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}/main`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể đặt hình ảnh ID ${imageId} làm hình chính cho sản phẩm ID ${productId}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error(`Lỗi khi đặt hình ảnh ID ${imageId} làm hình chính cho sản phẩm ID ${productId}:`, error);
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -344,15 +397,20 @@ export const setMainProductImage = async (productId: string | number, imageId: n
  * Lấy danh sách thông số kỹ thuật của danh mục theo slug
  */
 export const getSpecificationsByCategorySlug = async (categorySlug: string): Promise<Record<string, string[]>> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/category/slug/${categorySlug}/specifications`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: DEFAULT_HEADERS,
-  });
-  if (!response.ok) {
-    throw new Error(`Không thể lấy thông số kỹ thuật cho danh mục ${categorySlug}: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/category/slug/${categorySlug}/specifications`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: DEFAULT_HEADERS,
+    });
+    if (!response.ok) {
+      throw new Error(`Không thể lấy thông số kỹ thuật cho danh mục ${categorySlug}: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`Lỗi khi lấy thông số kỹ thuật cho danh mục ${categorySlug}:`, error);
+    throw new Error(handleApiError(error));
   }
-  return response.json();
 };
 
 /**
@@ -377,7 +435,7 @@ export const fetchCategorySpecifications = async (categorySlug: string): Promise
     return [];
   } catch (error) {
     console.error('Lỗi khi lấy thông số kỹ thuật của danh mục:', error);
-    return [];
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -385,18 +443,23 @@ export const fetchCategorySpecifications = async (categorySlug: string): Promise
  * Lấy tất cả sản phẩm không phân biệt trạng thái
  */
 export const fetchAllProducts = async (): Promise<{items: ProductDetail[]}> => {
-  const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/all`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: DEFAULT_HEADERS,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Không thể lấy danh sách tất cả sản phẩm: ${response.statusText}`);
+  try {
+    const url = `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/all`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: DEFAULT_HEADERS,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Không thể lấy danh sách tất cả sản phẩm: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Lỗi khi lấy tất cả sản phẩm:', error);
+    throw new Error(handleApiError(error));
   }
-  
-  return response.json();
 };
 
 /**
@@ -448,6 +511,6 @@ export const getSpecificationValues = async (categoryId: number): Promise<Record
     return getSpecificationsByCategorySlug(categorySlug);
   } catch (error) {
     console.error('Lỗi khi lấy giá trị thông số kỹ thuật:', error);
-    return {};
+    throw new Error(handleApiError(error));
   }
 };

@@ -2,6 +2,26 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import { createStaffUser, CreateStaffRequest } from '../services/userApi';
+import { z } from 'zod';
+import { toast } from 'sonner';
+
+// Định nghĩa schema validation với Zod
+const userSchema = z.object({
+  name: z.string()
+    .min(2, { message: 'Họ tên phải có ít nhất 2 ký tự' })
+    .max(100, { message: 'Họ tên không được vượt quá 100 ký tự' })
+    .regex(/^[A-Za-zÀ-ỹ\s]+$/, { message: 'Họ tên chỉ được chứa chữ cái và khoảng trắng' }),
+  email: z.string()
+    .min(1, { message: 'Email là bắt buộc' })
+    .email({ message: 'Email không hợp lệ' }),
+  password: z.string()
+    .min(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' }),
+  mobileNumber: z.string()
+    .refine(val => !val || /(0|\+84)[35789][0-9]{8}$/.test(val), {
+      message: 'Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 hoặc +84 và có 10 số.'
+    }).optional().nullable(),
+  role: z.enum(['ORDER_STAFF', 'PRODUCT_STAFF', 'MANAGER'])
+});
 
 const CreateUserPage = () => {
   const navigate = useNavigate();
@@ -11,8 +31,7 @@ const CreateUserPage = () => {
     email: '',
     password: '',
     mobileNumber: '',
-    profileImage: '',
-    role: 'STAFF'
+    role: 'ORDER_STAFF'
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,24 +55,26 @@ const CreateUserPage = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập họ tên';
+    try {
+      // Xác thực dữ liệu bằng Zod
+      userSchema.parse(formData);
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Chuyển các lỗi Zod thành định dạng của chúng ta
+        error.errors.forEach((err) => {
+          if (err.path) {
+            const fieldName = err.path[0].toString();
+            newErrors[fieldName] = err.message;
+          }
+        });
+      } else {
+        console.error('Lỗi không xác định:', error);
+      }
+      
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Vui lòng nhập email';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = 'Vui lòng nhập mật khẩu';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,14 +87,14 @@ const CreateUserPage = () => {
     setIsSubmitting(true);
     try {
       const user = await createStaffUser(formData);
-      alert('Tạo tài khoản thành công!');
+      toast.success('Tạo tài khoản thành công!');
       navigate(`/users/${user.id}`);
     } catch (error: any) {
       console.error('Lỗi khi tạo tài khoản:', error);
       if (error.response?.data?.message) {
-        alert(`Lỗi: ${error.response.data.message}`);
+        toast.error(`Lỗi: ${error.response.data.message}`);
       } else {
-        alert('Đã xảy ra lỗi khi tạo tài khoản. Vui lòng thử lại.');
+        toast.error('Đã xảy ra lỗi khi tạo tài khoản. Vui lòng thử lại sau.');
       }
     } finally {
       setIsSubmitting(false);
@@ -92,7 +113,7 @@ const CreateUserPage = () => {
           </button>
           <div>
             <h1 className="text-2xl font-semibold text-gray-800">Tạo tài khoản mới</h1>
-            <p className="text-gray-600">Thêm nhân viên hoặc quản trị viên mới</p>
+            <p className="text-gray-600">Thêm nhân viên mới</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -133,7 +154,7 @@ const CreateUserPage = () => {
                   id="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`mt-1 block w-full border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full border ${errors.name ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
                 />
                 {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
               </div>
@@ -148,7 +169,7 @@ const CreateUserPage = () => {
                   id="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`mt-1 block w-full border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full border ${errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
                 />
                 {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
               </div>
@@ -163,7 +184,7 @@ const CreateUserPage = () => {
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`mt-1 block w-full border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full border ${errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
                 />
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
               </div>
@@ -183,28 +204,12 @@ const CreateUserPage = () => {
                   type="text"
                   name="mobileNumber"
                   id="mobileNumber"
-                  value={formData.mobileNumber}
+                  value={formData.mobileNumber || ''}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className={`mt-1 block w-full border ${errors.mobileNumber ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
+                  placeholder=""
                 />
-              </div>
-              
-              <div>
-                <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
-                  Đường dẫn hình ảnh
-                </label>
-                <input
-                  type="text"
-                  name="profileImage"
-                  id="profileImage"
-                  value={formData.profileImage}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Nhập URL hình ảnh từ internet. Hệ thống hiện chưa hỗ trợ tải lên hình ảnh trực tiếp.
-                </p>
+                {errors.mobileNumber && <p className="mt-1 text-sm text-red-600">{errors.mobileNumber}</p>}
               </div>
               
               <div>
@@ -218,8 +223,9 @@ const CreateUserPage = () => {
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="STAFF">Nhân viên</option>
-                  <option value="MANAGER">Quản trị viên</option>
+                  <option value="ORDER_STAFF">Nhân viên xử lý đơn hàng</option>
+                  <option value="PRODUCT_STAFF">Nhân viên quản lý sản phẩm</option>
+                  <option value="MANAGER">Quản lý</option>
                 </select>
               </div>
             </div>

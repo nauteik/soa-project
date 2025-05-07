@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthResponse, LoginRequest, RegisterRequest } from '../types/auth';
+import { User, AuthResponse, LoginRequest } from '../types/auth';
 import * as authApi from '../services/authApi';
 
 interface AuthContextType {
@@ -8,7 +8,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -85,20 +84,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
   
-  const register = async (data: RegisterRequest) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      const response = await authApi.register(data);
-      saveAuthData(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đăng ký thất bại');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -149,7 +134,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: !!user,
       isLoading,
       login,
-      register,
       logout,
       updateProfile,
       changePassword,

@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto createStaffUser(UserResponseDto userDto, String password, UserRole role) {
         // Kiểm tra role hợp lệ (chỉ chấp nhận STAFF hoặc MANAGER)
-        if (role != UserRole.STAFF && role != UserRole.MANAGER) {
+        if (role != UserRole.ORDER_STAFF &&  role != UserRole.PRODUCT_STAFF && role != UserRole.MANAGER) {
             throw new BadRequestException("Vai trò không hợp lệ. Chỉ chấp nhận STAFF hoặc MANAGER.");
         }
         

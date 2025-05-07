@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.service.FileStorageService;
+import com.example.backend.service.S3StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,20 +14,21 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class FileUploadController {
 
-    private final FileStorageService fileStorageService;
+    private final S3StorageService s3StorageService;
 
     @Autowired
-    public FileUploadController(FileStorageService fileStorageService) {
-        this.fileStorageService = fileStorageService;
+    public FileUploadController(S3StorageService s3StorageService) {
+        this.s3StorageService = s3StorageService;
     }
 
     @PostMapping("/image")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
-            String filename = fileStorageService.store(file);
+            String imageUrl = s3StorageService.store(file);
             Map<String, String> response = new HashMap<>();
+            String filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
             response.put("filename", filename);
-            response.put("url", "/static/images/" + filename);
+            response.put("url", imageUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();
@@ -41,10 +42,10 @@ public class FileUploadController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("filename") String filename) {
         try {
-            String savedFilename = fileStorageService.storeWithName(file, filename);
+            String imageUrl = s3StorageService.storeWithName(file, filename);
             Map<String, String> response = new HashMap<>();
-            response.put("filename", savedFilename);
-            response.put("url", "/static/images/" + savedFilename);
+            response.put("filename", filename);
+            response.put("url", imageUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();
@@ -55,7 +56,7 @@ public class FileUploadController {
     
     @DeleteMapping("/image/{filename}")
     public ResponseEntity<Map<String, Object>> deleteImage(@PathVariable String filename) {
-        boolean deleted = fileStorageService.delete(filename);
+        boolean deleted = s3StorageService.delete(filename);
         Map<String, Object> response = new HashMap<>();
         
         if (deleted) {
@@ -66,6 +67,20 @@ public class FileUploadController {
             response.put("success", false);
             response.put("message", "File not found or couldn't be deleted");
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @GetMapping("/image/{filename}")
+    public ResponseEntity<Map<String, String>> getImageUrl(@PathVariable String filename) {
+        try {
+            String imageUrl = s3StorageService.getPublicUrl(filename);
+            Map<String, String> response = new HashMap<>();
+            response.put("url", imageUrl);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

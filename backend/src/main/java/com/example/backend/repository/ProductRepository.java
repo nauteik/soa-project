@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import com.example.backend.model.Category;
 import com.example.backend.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategoryId(Long categoryId);
     
     Optional<Product> findBySlug(String slug);
+    
+    Optional<Product> findBySku(String sku);
+    
+    List<Product> findByCategory(Category category);
+    
+    List<Product> findByBrandId(Long brandId);
     
     /**
      * Kiểm tra xem một mã SKU đã tồn tại trong cơ sở dữ liệu chưa

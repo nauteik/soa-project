@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,4 +51,9 @@ public class AddressController {
         return ResponseEntity.ok(addressService.setDefaultAddress(id));
     }
     
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAuthority('MANAGER') or hasAuthority('STAFF')")
+    public ResponseEntity<List<AddressDto>> getUserAddressesById(@PathVariable Long userId) {
+        return ResponseEntity.ok(addressService.getUserAddressesByUserId(userId));
+    }
 } 

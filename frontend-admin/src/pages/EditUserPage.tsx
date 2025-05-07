@@ -1,12 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, X } from 'lucide-react';
-import { getUserById, updateUserInfo, UserResponse } from '../services/userApi';
+import { ArrowLeft, Save, X, Shield } from 'lucide-react';
+import { getUserById, updateUserInfo, updateUserRole, updateUserStatus, UserResponse } from '../services/userApi';
+import { IMAGES_BASE_URL } from '../config/api';
+import { z } from 'zod';
+import { toast } from 'sonner';
+
+// Định nghĩa schema validation với Zod
+const userSchema = z.object({
+  name: z.string()
+    .min(2, { message: 'Họ tên phải có ít nhất 2 ký tự' })
+    .max(100, { message: 'Họ tên không được vượt quá 100 ký tự' })
+    .regex(/^[A-Za-zÀ-ỹ\s]+$/, { message: 'Họ tên chỉ được chứa chữ cái và khoảng trắng' }),
+  mobileNumber: z.string()
+    .refine(val => !val || /(0|\+84)[35789][0-9]{8}$/.test(val), {
+      message: 'Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 hoặc +84 và có 10 số.'
+    }).optional().nullable()
+});
 
 interface UserUpdateRequest {
   name: string;
   mobileNumber?: string | null;
-  profileImage?: string | null;
 }
 
 const EditUserPage = () => {
@@ -19,9 +33,10 @@ const EditUserPage = () => {
   const [formData, setFormData] = useState<UserUpdateRequest>({
     name: '',
     mobileNumber: '',
-    profileImage: '',
   });
 
+  const [role, setRole] = useState<'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER'>('USER');
+  const [isEnabled, setIsEnabled] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Tải thông tin người dùng khi trang được tải
@@ -36,11 +51,12 @@ const EditUserPage = () => {
         setFormData({
           name: data.name || '',
           mobileNumber: data.mobileNumber || '',
-          profileImage: data.profileImage || '',
         });
+        setRole(data.role);
+        setIsEnabled(data.isEnabled);
       } catch (error) {
         console.error('Error fetching user:', error);
-        alert('Không thể tải thông tin người dùng. Vui lòng thử lại sau.');
+        toast.error('Không thể tải thông tin người dùng. Vui lòng thử lại sau.');
       } finally {
         setIsLoading(false);
       }
@@ -65,15 +81,37 @@ const EditUserPage = () => {
     }
   };
 
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRole(e.target.value as 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER');
+  };
+
+  const handleStatusChange = () => {
+    setIsEnabled(!isEnabled);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập họ tên';
+    try {
+      // Xác thực dữ liệu bằng Zod
+      userSchema.parse(formData);
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Chuyển các lỗi Zod thành định dạng của chúng ta
+        error.errors.forEach((err) => {
+          if (err.path) {
+            const fieldName = err.path[0].toString();
+            newErrors[fieldName] = err.message;
+          }
+        });
+      } else {
+        console.error('Lỗi không xác định:', error);
+      }
+      
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,18 +123,35 @@ const EditUserPage = () => {
     
     setIsSubmitting(true);
     try {
-      // Sử dụng API updateUserInfo
-      const updated = await updateUserInfo(Number(id), formData);
-      setUser(updated);
+      // Cập nhật thông tin cơ bản, giữ nguyên profileImage
+      let updatedUser = await updateUserInfo(
+        Number(id), 
+        {
+          ...formData,
+          profileImage: user?.profileImage // Giữ nguyên hình ảnh hiện tại
+        }
+      );
       
-      alert('Cập nhật thông tin thành công!');
-      navigate(`/users/${id}`);
+      // Cập nhật vai trò nếu đã thay đổi
+      if (user && user.role !== role) {
+        updatedUser = await updateUserRole(Number(id), role);
+      }
+      
+      // Cập nhật trạng thái nếu đã thay đổi
+      if (user && user.isEnabled !== isEnabled) {
+        updatedUser = await updateUserStatus(Number(id), isEnabled);
+      }
+      
+      setUser(updatedUser);
+      
+      toast.success('Cập nhật thông tin thành công!');
+      // navigate(`/users/${id}`);
     } catch (error: any) {
       console.error('Lỗi khi cập nhật thông tin:', error);
       if (error.response?.data?.message) {
-        alert(`Lỗi: ${error.response.data.message}`);
+        toast.error(`Lỗi: ${error.response.data.message}`);
       } else {
-        alert('Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
+        toast.error('Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
       }
     } finally {
       setIsSubmitting(false);
@@ -185,9 +240,11 @@ const EditUserPage = () => {
                   id="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`mt-1 block w-full border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full border ${errors.name ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
                 />
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
               </div>
               
               <div>
@@ -202,6 +259,56 @@ const EditUserPage = () => {
                   className="mt-1 block w-full border border-gray-300 bg-gray-100 rounded-md shadow-sm py-2 px-3 text-gray-500"
                 />
                 <p className="mt-1 text-xs text-gray-500">Email không thể thay đổi</p>
+              </div>
+              
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                  Vai trò <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1 flex items-center">
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={handleRoleChange}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="USER">Khách hàng</option>
+                    <option value="ORDER_STAFF">Nhân viên xử lý đơn hàng</option>
+                    <option value="PRODUCT_STAFF">Nhân viên quản lý sản phẩm</option>
+                    <option value="MANAGER">Quản lý</option>
+                  </select>
+                  <div className="ml-2">
+                    <Shield size={20} className="text-blue-500" />
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Lưu ý: Phân quyền sẽ ảnh hưởng đến các chức năng người dùng có thể truy cập
+                </p>
+              </div>
+              
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                  Trạng thái
+                </label>
+                <div className="mt-1 flex items-center">
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={handleStatusChange}
+                      className="sr-only peer"
+                    />
+                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ms-3 text-sm font-medium text-gray-700">
+                      {isEnabled ? 'Hoạt động' : 'Bị khóa'}
+                    </span>
+                  </label>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  {isEnabled 
+                    ? 'Tài khoản đang hoạt động bình thường' 
+                    : 'Tài khoản bị khóa sẽ không thể đăng nhập'}
+                </p>
               </div>
             </div>
             
@@ -221,62 +328,47 @@ const EditUserPage = () => {
                   id="mobileNumber"
                   value={formData.mobileNumber || ''}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className={`mt-1 block w-full border ${errors.mobileNumber ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm py-2 px-3 focus:outline-none`}
+                  placeholder="Ví dụ: 0912345678"
                 />
+                {errors.mobileNumber && (
+                  <p className="mt-1 text-sm text-red-600">{errors.mobileNumber}</p>
+                )}
+               
               </div>
               
               <div>
-                <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
-                  Đường dẫn hình ảnh
+                <label className="block text-sm font-medium text-gray-700">
+                  Hình ảnh đại diện
                 </label>
-                <input
-                  type="text"
-                  name="profileImage"
-                  id="profileImage"
-                  value={formData.profileImage || ''}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Nhập URL hình ảnh từ internet. Hệ thống hiện chưa hỗ trợ tải lên hình ảnh trực tiếp.
+                {user.profileImage ? (
+                  <div className="mt-2 flex items-center space-x-3">
+                    <div className="h-16 w-16 rounded-full overflow-hidden border border-gray-200">
+                      <img 
+                        src={`${IMAGES_BASE_URL}${user.profileImage}`} 
+                        alt={user.name} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Hình ảnh đại diện hiện tại<br />
+                      <span className="italic text-xs">Không thể thay đổi tại đây</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500 italic">Người dùng chưa có hình đại diện</p>
+                )}
+              </div>
+              
+              <div className="pt-4">
+                <p className="text-sm text-gray-500">
+                  Ngày tạo: {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                 </p>
-              </div>
-              
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                  Vai trò
-                </label>
-                <div className="mt-1 flex items-center">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    user.role === 'MANAGER' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : user.role === 'STAFF' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {user.role === 'MANAGER' 
-                      ? 'Quản trị viên' 
-                      : user.role === 'STAFF' 
-                        ? 'Nhân viên' 
-                        : 'Khách hàng'}
-                  </span>
-                  <span className="ml-2 text-xs text-gray-500">(Thay đổi vai trò ở trang chi tiết)</span>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Trạng thái
-                </label>
-                <div className="mt-1 flex items-center">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    user.isEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {user.isEnabled ? 'Hoạt động' : 'Đã khóa'}
-                  </span>
-                  <span className="ml-2 text-xs text-gray-500">(Thay đổi trạng thái ở trang chi tiết)</span>
-                </div>
+                {user.updatedAt && (
+                  <p className="text-sm text-gray-500">
+                    Cập nhật lần cuối: {new Date(user.updatedAt).toLocaleDateString('vi-VN')}
+                  </p>
+                )}
               </div>
             </div>
           </div>

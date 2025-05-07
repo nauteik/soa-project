@@ -80,9 +80,13 @@ const ProfilePage = () => {
       });
       
       if (user.profileImage) {
-        setPreviewUrl(user.profileImage.startsWith('http') 
-          ? user.profileImage 
-          : `${IMAGES_BASE_URL}${user.profileImage}`);
+        // Xử lý hiển thị ảnh đại diện
+        if (user.profileImage.startsWith('http')) {
+          setPreviewUrl(user.profileImage);
+        } else {
+          // Ghép với base URL của S3
+          setPreviewUrl(`${IMAGES_BASE_URL}${user.profileImage}`);
+        }
       }
     }
   }, [user, reset]);
@@ -111,9 +115,13 @@ const ProfilePage = () => {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/upload/image`, {
+      // Sửa API URL để đúng với FileUploadController
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/upload/image`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (!response.ok) {
@@ -157,7 +165,7 @@ const ProfilePage = () => {
           
         try {
           // Gửi request xóa file đến backend
-          const response = await fetch(`${API_BASE_URL}/upload/image/${filename}`, {
+          const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/upload/image/${filename}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,

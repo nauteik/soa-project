@@ -36,10 +36,10 @@ const OrderSuccessPage = () => {
   };
 
   // Format địa chỉ
-  const formatAddress = (order: Order) => {
-    if (!order?.shippingAddress) return "";
+  const formatAddress = (order: Order | null) => {
+    if (!order || !order.shippingAddress) return "";
     const addr = order.shippingAddress;
-    return `${addr.street}, ${addr.ward}, ${addr.district}, ${addr.province}`;
+    return `${addr.street || ""}, ${addr.ward || ""}, ${addr.district || ""}, ${addr.province || ""}`.replace(/,\s*,/g, ",").replace(/^,\s*|,\s*$/g, "");
   };
 
   if (loading) {

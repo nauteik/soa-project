@@ -19,6 +19,7 @@ public class OrderResponseDTO {
     private String orderNumber;
     private Long userId;
     private String userName;
+    private String userEmail;
     private List<OrderItemDTO> items;
     private AddressDto shippingAddress;
     private BigDecimal totalAmount;
@@ -33,7 +34,4 @@ public class OrderResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderStatusHistoryDTO> statusHistory;
-    
-    // Thêm thông tin về thanh toán trực tuyến khi cần thiết
-    private String paymentUrl; // URL chuyển hướng đến trang thanh toán (nếu thanh toán online)
 } 

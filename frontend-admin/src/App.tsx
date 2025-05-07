@@ -9,17 +9,26 @@ import DashboardPage from './pages/DashboardPage';
 import ProductsPage from '@/pages/ProductsPage';
 import OrdersPage from '@/pages/OrdersPage';
 import UsersPage from '@/pages/UsersPage';
-import SettingsPage from '@/pages/SettingsPage';
+import ReportsPage from '@/pages/ReportsPage';
 
 // Các trang mới cho sản phẩm
 import ProductDetailPage from '@/pages/product/ProductDetailPage';
 import ProductCreatePage from '@/pages/product/ProductCreatePage';
 import ProductEditPage from '@/pages/product/ProductEditPage';
 
+// Các trang cho danh mục
+import CategoriesPage from '@/pages/CategoriesPage'; 
+import CategoryDetailPage from '@/pages/category/CategoryDetailPage';
+import CategoryCreatePage from '@/pages/category/CategoryCreatePage';
+import CategoryEditPage from '@/pages/category/CategoryEditPage';
+
 // Các trang mới cho người dùng
 import UserDetailPage from '@/pages/UserDetailPage';
 import CreateUserPage from '@/pages/CreateUserPage';
 import EditUserPage from '@/pages/EditUserPage';
+
+// Trang xử lý đơn hàng
+import ProcessOrderPage from '@/pages/ProcessOrderPage';
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -90,14 +99,26 @@ const AppRoutes = () => {
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/products/edit/:id" element={<ProductEditPage />} />
         
+        {/* Routes danh mục */}
+        <Route path="/categories" element={<Navigate to="/categories/list" replace />} />
+        <Route path="/categories/list" element={<CategoriesPage />} />
+        <Route path="/categories/create" element={<CategoryCreatePage />} />
+        <Route path="/categories/:id" element={<CategoryDetailPage />} />
+        <Route path="/categories/edit/:id" element={<CategoryEditPage />} />
+        
         {/* Routes người dùng */}
         <Route path="/users" element={<UsersPage />} />
         <Route path="/users/create" element={<CreateUserPage />} />
         <Route path="/users/:id" element={<UserDetailPage />} />
         <Route path="/users/edit/:id" element={<EditUserPage />} />
         
+        {/* Routes đơn hàng */}
         <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/orders/process/:id" element={<ProcessOrderPage />} />
+        
+        {/* Route báo cáo */}
+        <Route path="/reports" element={<ReportsPage />} />
+        
       </Route>
 
       {/* Redirect to login if not authenticated */}

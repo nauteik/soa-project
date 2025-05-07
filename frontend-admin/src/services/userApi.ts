@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { handleApiError } from '../utils/errorHandler';
 
 // Endpoints
 const USERS_ENDPOINT = `${API_BASE_URL}/users`;
@@ -9,10 +10,26 @@ export interface UserResponse {
   id: number;
   name: string;
   email: string;
-  mobileNumber: string | null;
-  profileImage: string | null;
-  role: 'USER' | 'STAFF' | 'MANAGER';
+  mobileNumber?: string | null;
+  profileImage?: string | null;
+  role: 'USER' | 'MANAGER' | 'ORDER_STAFF' | 'PRODUCT_STAFF';
   isEnabled: boolean;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface AddressResponse {
+  id: number;
+  fullName: string;
+  mobileNo: string;
+  fullAddress: string;
+  street: string;
+  ward: string;
+  district: string;
+  city: string;
+  country: string;
+  postalCode?: string;
+  isDefault: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -23,7 +40,7 @@ export interface CreateStaffRequest {
   password: string;
   mobileNumber?: string;
   profileImage?: string;
-  role: 'STAFF' | 'MANAGER';
+  role: 'MANAGER' | 'ORDER_STAFF' | 'PRODUCT_STAFF';
 }
 
 // Hàm lấy header Authorization từ localStorage
@@ -47,14 +64,14 @@ export const getAllUsers = async (): Promise<UserResponse[]> => {
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
 /**
  * Lấy danh sách người dùng theo vai trò
  */
-export const getUsersByRole = async (role: 'USER' | 'STAFF' | 'MANAGER'): Promise<UserResponse[]> => {
+export const getUsersByRole = async (role: 'USER' | 'MANAGER' | 'ORDER_STAFF' | 'PRODUCT_STAFF'): Promise<UserResponse[]> => {
   try {
     const response = await axios.get(`${USERS_ENDPOINT}/role/${role}`, {
       headers: getAuthHeader(),
@@ -62,7 +79,7 @@ export const getUsersByRole = async (role: 'USER' | 'STAFF' | 'MANAGER'): Promis
     return response.data;
   } catch (error) {
     console.error(`Error fetching users by role ${role}:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -77,7 +94,7 @@ export const getUserById = async (id: number): Promise<UserResponse> => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching user ${id}:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -93,23 +110,24 @@ export const updateUserStatus = async (id: number, enabled: boolean): Promise<Us
     return response.data;
   } catch (error) {
     console.error(`Error updating user ${id} status:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
 /**
- * Cập nhật vai trò người dùng
+ * Cập nhật vai trò của người dùng
  */
-export const updateUserRole = async (id: number, role: 'USER' | 'STAFF' | 'MANAGER'): Promise<UserResponse> => {
+export const updateUserRole = async (id: number, role: 'USER' | 'MANAGER' | 'ORDER_STAFF' | 'PRODUCT_STAFF'): Promise<UserResponse> => {
   try {
-    const response = await axios.put(`${USERS_ENDPOINT}/${id}/role`, 
+    const response = await axios.put(
+      `${API_BASE_URL}/users/${id}/role`, 
       { role }, 
       { headers: getAuthHeader() }
     );
     return response.data;
   } catch (error) {
     console.error(`Error updating user ${id} role:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -123,7 +141,7 @@ export const deleteUser = async (id: number): Promise<void> => {
     });
   } catch (error) {
     console.error(`Error deleting user ${id}:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -139,7 +157,7 @@ export const createStaffUser = async (userData: CreateStaffRequest): Promise<Use
     return response.data;
   } catch (error) {
     console.error('Error creating staff user:', error);
-    throw error;
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -159,6 +177,21 @@ export const updateUserInfo = async (id: number, userData: {
     return response.data;
   } catch (error) {
     console.error(`Error updating user ${id} info:`, error);
-    throw error;
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Lấy danh sách địa chỉ của người dùng theo ID
+ */
+export const getUserAddressesById = async (userId: number): Promise<AddressResponse[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/addresses/user/${userId}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching addresses for user ${userId}:`, error);
+    throw new Error(handleApiError(error));
   }
 }; 

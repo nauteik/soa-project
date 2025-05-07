@@ -126,3 +126,74 @@ FastAPI automatically generates interactive API documentation. Once the server i
     *   *Note:* If you used a prefix like `/api/v1` in `app/main.py`, the URL will be `http://localhost:8000/api/v1/redoc`.
 
 You can use these interfaces to explore and test the API endpoints.
+
+## Quản lý danh mục
+
+### Trang quản lý danh mục
+
+Hệ thống giờ đây cung cấp các tính năng quản lý danh mục sản phẩm, với các chức năng:
+
+- Xem danh sách danh mục
+- Thêm, chỉnh sửa và xem chi tiết danh mục
+- Quản lý thông số kỹ thuật (SpecificationField) của từng danh mục
+
+### Mối quan hệ giữa Category và Product
+
+- Mỗi Product thuộc về một Category
+- Mỗi Category có thể có danh mục cha (parent) hoặc là danh mục gốc
+- Category chứa các SpecificationField định nghĩa cấu trúc của thông số kỹ thuật cho các sản phẩm thuộc danh mục đó
+- Product có thuộc tính specifications dạng JSON chứa các cặp key-value, trong đó key tương ứng với key trong SpecificationField của Category
+
+### Thông số kỹ thuật (SpecificationField)
+
+Mỗi danh mục có thể có nhiều thông số kỹ thuật, mỗi thông số gồm:
+- `key`: Định danh duy nhất của thông số
+- `labelVi`: Tên hiển thị tiếng Việt
+- `labelEn`: Tên hiển thị tiếng Anh
+- `type`: Kiểu dữ liệu (text, number, boolean, list)
+- `sortOrder`: Thứ tự sắp xếp
+
+### Các chức năng chính
+
+- Thêm/sửa/xóa danh mục
+- Thêm/sửa/xóa thông số kỹ thuật cho danh mục
+- Xem cây phân cấp danh mục (danh mục cha - con)
+- Quản lý thứ tự hiển thị của các thông số kỹ thuật
+
+## Cấu hình AWS S3 cho lưu trữ hình ảnh
+
+Để sử dụng AWS S3 làm nơi lưu trữ hình ảnh, bạn cần cấu hình các thông tin sau trong file `application.properties`:
+
+```properties
+# AWS S3 Configuration
+aws.s3.access-key=YOUR_ACCESS_KEY
+aws.s3.secret-key=YOUR_SECRET_KEY
+aws.s3.region=ap-southeast-1
+aws.s3.bucket=your-bucket-name
+aws.s3.endpoint=https://s3.ap-southeast-1.amazonaws.com
+```
+
+Các bước thực hiện:
+
+1. Tạo tài khoản AWS nếu chưa có
+2. Tạo IAM User với quyền S3FullAccess
+3. Tạo S3 Bucket và cấu hình CORS:
+   ```json
+   [
+     {
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+       "AllowedOrigins": ["*"],
+       "ExposeHeaders": []
+     }
+   ]
+   ```
+4. Lấy Access Key và Secret Key từ IAM User
+5. Cấu hình vào file application.properties
+6. Khởi động lại ứng dụng
+
+API Endpoints cho upload hình ảnh:
+- `POST /api/upload/image`: Upload hình ảnh với tên tự động
+- `POST /api/upload/image/named`: Upload hình ảnh với tên chỉ định
+- `DELETE /api/upload/image/{filename}`: Xóa hình ảnh
+- `GET /api/upload/image/{filename}`: Lấy URL công khai của hình ảnh

@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import orderApi, { Order as ApiOrder, OrderItem as ApiOrderItem } from '../../services/orderApi';
-import { IMAGES_BASE_URL } from '../../config/api';
+import { Eye, AlertCircle, Loader2 } from 'lucide-react';
+import orderApi from '../../services/orderApi';
+import { Order, OrderStatus, orderStatusColors } from '../../types/order';
 import { formatCurrency } from '../../utils/format';
+import OrderDetailModal from '../../components/user/OrderDetailModal';
 
-// Component AlertDialog đơn giản
+// Component AlertDialog cho xác nhận hủy đơn hàng
 interface AlertDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -74,28 +76,7 @@ const AlertDialogAction: React.FC<{
   );
 };
 
-// Định nghĩa interface cho đơn hàng
-interface OrderItem {
-  id: number;
-  productName: string;
-  quantity: number;
-  price: number;
-  totalPrice: number;
-  imageUrl?: string;
-}
-
-interface Order {
-  orderNumber: string;
-  createdAt: string;
-  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
-  totalItems: number;
-  totalAmount: number;
-  shippingAddress: string;
-  paymentMethod: string;
-  items: OrderItem[];
-}
-
-// Hàm format tiền
+// Hàm format ngày giờ
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('vi-VN', {
@@ -107,82 +88,11 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-// Hàm chuyển đổi status sang tiếng Việt
-const getStatusText = (status: Order['status']) => {
-  const statusMap: Record<Order['status'], string> = {
-    PENDING: 'Chờ xác nhận',
-    PROCESSING: 'Đang xử lý',
-    SHIPPED: 'Đang giao hàng',
-    DELIVERED: 'Đã giao hàng',
-    CANCELLED: 'Đã hủy',
-  };
-  return statusMap[status] || 'Không xác định';
-};
-
-// Hàm tạo màu tương ứng với status
-const getStatusClass = (status: Order['status']) => {
-  const statusColorMap: Record<Order['status'], string> = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    PROCESSING: 'bg-blue-100 text-blue-800',
-    SHIPPED: 'bg-purple-100 text-purple-800',
-    DELIVERED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-gray-100 text-gray-800',
-  };
-  return statusColorMap[status] || 'bg-gray-100 text-gray-800';
-};
-
-// Hàm chuyển đổi từ API order sang Order
-const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
-  // Format địa chỉ
-  const address = apiOrder.shippingAddress;
-  const formattedAddress = address ? `${address.street || ''}, ${address.ward || ''}, ${address.district || ''}, ${address.province || ''}` : 'Không có địa chỉ';
-  
-  // Map các item
-  const items: OrderItem[] = apiOrder.items.map(item => ({
-    id: item.id,
-    productName: item.productName,
-    quantity: item.quantity,
-    price: item.price,
-    totalPrice: item.subtotal,
-    imageUrl: item.productImage && (
-      item.productImage.startsWith('http') 
-        ? item.productImage 
-        : `${IMAGES_BASE_URL}${item.productImage}`
-    )
-  }));
-  
-  // Map phương thức thanh toán
-  let paymentMethod = '';
-  switch (apiOrder.paymentMethod) {
-    case 'COD':
-      paymentMethod = 'COD - Thanh toán khi nhận hàng';
-      break;
-    case 'VNPAY':
-      paymentMethod = 'VNPAY - Thẻ ATM/Internet Banking';
-      break;
-    case 'MOMO':
-      paymentMethod = 'MOMO - Ví điện tử';
-      break;
-    default:
-      paymentMethod = apiOrder.paymentMethod;
-  }
-  
-  return {
-    orderNumber: apiOrder.orderNumber,
-    createdAt: apiOrder.createdAt,
-    status: apiOrder.status,
-    totalItems: apiOrder.totalItems,
-    totalAmount: apiOrder.totalAmount,
-    shippingAddress: formattedAddress,
-    paymentMethod,
-    items
-  };
-};
-
-const OrdersPage = () => {
+const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -197,8 +107,7 @@ const OrdersPage = () => {
     setIsLoading(true);
     try {
       const apiOrders = await orderApi.getUserOrders();
-      const mappedOrders = apiOrders.map(mapApiOrderToOrder);
-      setOrders(mappedOrders);
+      setOrders(apiOrders);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách đơn hàng:', error);
       toast.error('Không thể tải danh sách đơn hàng');
@@ -207,13 +116,15 @@ const OrdersPage = () => {
     }
   };
   
-  // Hàm toggle hiển thị chi tiết đơn hàng
-  const toggleOrderDetails = (orderNumber: string) => {
-    if (expandedOrder === orderNumber) {
-      setExpandedOrder(null);
-    } else {
-      setExpandedOrder(orderNumber);
-    }
+  // Sắp xếp đơn hàng mới nhất lên đầu
+  const sortedOrders = [...orders].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  
+  // Xem chi tiết đơn hàng
+  const handleViewOrderDetail = (order: Order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
   };
   
   // Chuẩn bị hủy đơn hàng
@@ -233,7 +144,9 @@ const OrdersPage = () => {
       // Cập nhật trạng thái đơn hàng trong state
       setOrders(prevOrders => 
         prevOrders.map(order => 
-          order.orderNumber === orderToCancel ? { ...order, status: 'CANCELLED' } : order
+          order.orderNumber === orderToCancel 
+            ? { ...order, status: OrderStatus.CANCELED, statusDisplayName: 'Đã hủy' } 
+            : order
         )
       );
       
@@ -249,123 +162,91 @@ const OrdersPage = () => {
   };
   
   return (
-    <div>
-      <h2 className="text-lg font-medium mb-4">Đơn hàng của tôi</h2>
+    <div className="container mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold mb-6">Đơn hàng của tôi</h1>
       
       {isLoading ? (
-        <div className="py-4 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <p className="mt-2 text-gray-500">Đang tải đơn hàng...</p>
         </div>
       ) : orders.length === 0 ? (
-        <div className="py-4 text-center text-gray-500">
-          Bạn chưa có đơn hàng nào.
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+          <h3 className="text-lg font-medium text-gray-900">Không có đơn hàng nào</h3>
+          <p className="mt-1 text-gray-500">Bạn chưa đặt đơn hàng nào.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map(order => (
-            <div key={order.orderNumber} className="border rounded-lg overflow-hidden">
-              {/* Header của đơn hàng */}
-              <div className="bg-gray-50 p-4">
-                <div className="flex flex-col sm:flex-row sm:justify-between">
-                  <div className="mb-2 sm:mb-0">
-                    <h3 className="font-medium">Đơn hàng #{order.orderNumber}</h3>
-                    <p className="text-sm text-gray-500">
-                      Ngày đặt: {formatDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(order.status)}`}>
-                      {getStatusText(order.status)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Thông tin tổng quan đơn hàng */}
-              <div className="p-4 border-b flex justify-between items-center">
-                <div>
-                  <p className="text-sm">
-                    <span className="font-medium">Tổng tiền:</span> {formatCurrency(order.totalAmount)}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">Số lượng:</span> {order.totalItems} sản phẩm
-                  </p>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    className="text-primary hover:text-primary-dark text-sm font-medium"
-                    onClick={() => toggleOrderDetails(order.orderNumber)}
-                  >
-                    {expandedOrder === order.orderNumber ? 'Ẩn chi tiết' : 'Xem chi tiết'}
-                  </button>
-                </div>
-              </div>
-              
-              {/* Chi tiết đơn hàng - hiển thị khi click vào Xem chi tiết */}
-              {expandedOrder === order.orderNumber && (
-                <div className="p-4">
-                  {/* Địa chỉ giao hàng và phương thức thanh toán */}
-                  <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sortedOrders.map(order => (
+            <div key={order.orderNumber} className="bg-white rounded-md shadow-sm hover:shadow border border-gray-100">
+              <div className="p-5">
+                <div className="flex flex-col">
+                  {/* Dòng 1: Tiêu đề đơn hàng và trạng thái */}
+                  <div className="flex justify-between mb-3">
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Địa chỉ giao hàng</h4>
-                      <p className="text-sm text-gray-600">{order.shippingAddress}</p>
+                      <h3 className="text-base font-medium text-gray-900">
+                        Đơn hàng #{order.orderNumber}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(order.createdAt)}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Phương thức thanh toán</h4>
-                      <p className="text-sm text-gray-600">{order.paymentMethod}</p>
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${orderStatusColors[order.status]}`}>
+                        {order.statusDisplayName}
+                      </span>
                     </div>
                   </div>
                   
-                  {/* Danh sách sản phẩm */}
-                  <h4 className="text-sm font-medium mb-2">Sản phẩm</h4>
-                  <div className="space-y-4">
-                    {order.items.map(item => (
-                      <div key={item.id} className="flex items-start gap-4 pb-3 border-b last:border-0">
-                        <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                          {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.productName} 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              No Image
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-grow">
-                          <h5 className="font-medium">{item.productName}</h5>
-                          <p className="text-sm text-gray-600">
-                            {formatCurrency(item.price)} x {item.quantity}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(item.totalPrice)}</p>
-                        </div>
-                      </div>
-                    ))}
+                  {/* Dòng 2: Thông tin cơ bản */}
+                  <div className="grid grid-cols-3 gap-3 mb-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">TỔNG TIỀN</p>
+                      <p className="font-semibold text-gray-900">{formatCurrency(order.totalAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">SẢN PHẨM</p>
+                      <p>{order.items.length} món</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">THANH TOÁN</p>
+                      <p>Thanh toán khi nhận hàng</p>
+                    </div>
                   </div>
                   
-                  {/* Hành động với đơn hàng */}
-                  <div className="mt-4 flex justify-end">
-                    {order.status === 'PENDING' && (
+                  {/* Dòng 3: Nút tương tác */}
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      onClick={() => handleViewOrderDetail(order)}
+                      className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+                    >
+                      Xem chi tiết
+                    </button>
+                    
+                    {order.status === OrderStatus.PENDING && (
                       <button
-                        type="button"
-                        className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         onClick={() => prepareToCancel(order.orderNumber)}
+                        className="inline-flex items-center px-3 py-1.5 border border-red-600 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50"
                       >
                         Hủy đơn hàng
                       </button>
                     )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
+      )}
+      
+      {/* Modal xem chi tiết đơn hàng */}
+      {selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+        />
       )}
       
       {/* Dialog xác nhận hủy đơn hàng */}
@@ -381,12 +262,12 @@ const OrdersPage = () => {
             <AlertDialogCancel disabled={isCancelling}>Không</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleCancelOrder} 
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-500 hover:bg-red-600 text-white"
               disabled={isCancelling}
             >
               {isCancelling ? (
                 <span className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
                   Đang hủy...
                 </span>
               ) : (

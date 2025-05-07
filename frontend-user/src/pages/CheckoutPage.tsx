@@ -148,18 +148,9 @@ const CheckoutPage = () => {
       // Xóa dữ liệu đã chọn khỏi localStorage
       localStorage.removeItem("selectedCartItems");
 
-      // Xử lý kết quả dựa trên phương thức thanh toán
-      if (values.paymentMethod === "COD") {
-        toast.success("Đặt hàng thành công!");
-        navigate(`/order-success/${response.orderNumber}`);
-      } else {
-        // Redirect đến trang thanh toán online
-        if (response.paymentUrl) {
-          window.location.href = response.paymentUrl;
-        } else {
-          toast.error("Không thể tạo liên kết thanh toán");
-        }
-      }
+      // Hiển thị thông báo thành công và chuyển hướng đến trang thành công
+      toast.success("Đặt hàng thành công!");
+      navigate(`/order-success/${response.orderNumber}`);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Có lỗi xảy ra khi đặt hàng");

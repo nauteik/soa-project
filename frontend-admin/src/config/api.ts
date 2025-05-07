@@ -12,4 +12,4 @@ export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
 };
 
-export const IMAGES_BASE_URL = 'http://localhost:8080/static/images/';
+export const IMAGES_BASE_URL = 'https://lapstore-images.s3.ap-southeast-1.amazonaws.com/images/';
