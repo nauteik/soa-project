@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://ec2-18-136-205-17.ap-southeast-1.compute.amazonaws.com:8080/api';
+export const API_BASE_URL = 'https://ec2-18-136-205-17.ap-southeast-1.compute.amazonaws.com/api';
 
 export const ENDPOINTS = {
   PRODUCTS: '/products',
