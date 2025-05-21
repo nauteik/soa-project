@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS, DEFAULT_HEADERS } from '../config/api';
+import { ENDPOINTS, DEFAULT_HEADERS, API_BASE_URL } from '../config/api';
 import { handleApiError } from '../utils/errorHandler';
 
 // Định nghĩa các interfaces
@@ -24,7 +24,7 @@ interface AuthResponse {
 
 // Tạo instance axios với cấu hình mặc định - sử dụng đường dẫn tương đối để tận dụng proxy của Vite
 const api = axios.create({
-  baseURL: '/api', // Đường dẫn tương đối, Vite proxy sẽ chuyển tiếp đến backend
+  baseURL: API_BASE_URL, // Sử dụng API_BASE_URL từ config
   headers: DEFAULT_HEADERS,
 });
 
@@ -45,7 +45,7 @@ const authService = {
   // Đăng nhập admin (sử dụng endpoint dành riêng cho admin)
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      console.log('Gửi yêu cầu đăng nhập admin đến:', `/api${ENDPOINTS.AUTH}/admin/login`);
+      console.log('Gửi yêu cầu đăng nhập admin đến:', `${ENDPOINTS.AUTH}/admin/login`);
       const response = await api.post<AuthResponse>(`${ENDPOINTS.AUTH}/admin/login`, credentials);
       console.log('Kết quả đăng nhập:', response);
       return response.data;
@@ -104,7 +104,7 @@ const authService = {
     if (userStr) {
       try {
         return JSON.parse(userStr) as User;
-      } catch (error) {
+      } catch {
         return null;
       }
     }

@@ -154,7 +154,7 @@ public class S3LoggingService {
                 key,
                 inputStream,
                 metadata)
-                .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl);
+                .withCannedAcl(CannedAccessControlList.PublicRead);
         
         s3Client.putObject(putRequest);
     }
