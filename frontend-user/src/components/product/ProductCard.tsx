@@ -13,7 +13,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
-  const { id, name, slug, price, discount, images, specifications, category } = product;
+  const { id, name, slug, price, discount, images, category } = product;
   
   // Find the main image or use the first one
   const mainImage = images && images.length > 0 
@@ -28,8 +28,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
   // Calculate the discounted price
   const discountedPrice = price * (1 - discount / 100);
   
-  // Get rating from specifications if available
-  const rating = specifications?.rating || 0;
   
   // Tạo URL sản phẩm theo định dạng mới nếu có category, nếu không thì dùng format cũ
   const productUrl = category?.slug 
