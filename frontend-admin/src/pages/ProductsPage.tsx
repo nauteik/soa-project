@@ -1,16 +1,10 @@
-import { Plus, Search, Filter, Edit, Trash2, Eye, X, ArrowUp, ArrowDown, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import Slider from '@mui/material/Slider';
+import { ArrowDown, ArrowUp, Check, Edit, Eye, Filter, Plus, Search, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Slider from '@mui/material/Slider';
-import { IMAGES_BASE_URL } from '../config/api';
-import { 
-  fetchAllProducts, 
-  extractCategoriesAndBrands, 
-  deleteProductById, 
-  processImageUrl, 
-  ProductDetail 
-} from '../services/productApi';
+
+import { extractCategoriesAndBrands, fetchAllProducts, processImageUrl } from '../services/productApi';
 
 interface Product {
   id: number;
@@ -267,18 +261,18 @@ const ProductsPage = () => {
     navigate(`/products/edit/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
-      try {
-        await deleteProductById(id);
-        // Cập nhật lại danh sách sản phẩm sau khi xóa
-        setProducts(products.filter(product => product.id !== id));
-      } catch (error) {
-        console.error('Lỗi khi xóa sản phẩm:', error);
-        alert('Không thể xóa sản phẩm. Vui lòng thử lại sau.');
-      }
-    }
-  };
+  // const handleDelete = async (id: number) => {
+  //   if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
+  //     try {
+  //       await deleteProductById(id);
+  //       // Cập nhật lại danh sách sản phẩm sau khi xóa
+  //       setProducts(products.filter(product => product.id !== id));
+  //     } catch (error) {
+  //       console.error('Lỗi khi xóa sản phẩm:', error);
+  //       alert('Không thể xóa sản phẩm. Vui lòng thử lại sau.');
+  //     }
+  //   }
+  // };
 
   const handleAddProduct = () => {
     navigate('/products/create');
@@ -488,6 +482,9 @@ const ProductsPage = () => {
                     <Slider
                       value={filterOptions.minPrice ?? priceRange.min}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         // Chỉ cập nhật nếu minPrice <= maxPrice
                         if (value <= (filterOptions.maxPrice ?? priceRange.max)) {
@@ -520,6 +517,9 @@ const ProductsPage = () => {
                     <Slider
                       value={filterOptions.maxPrice ?? priceRange.max}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         // Chỉ cập nhật nếu maxPrice >= minPrice
                         if (value >= (filterOptions.minPrice ?? priceRange.min)) {
@@ -562,6 +562,9 @@ const ProductsPage = () => {
                     <Slider
                       value={filterOptions.minStock ?? stockRange.min}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         if (value <= (filterOptions.maxStock ?? stockRange.max)) {
                           handleFilterChange('minStock', value);
@@ -592,6 +595,9 @@ const ProductsPage = () => {
                     <Slider
                       value={filterOptions.maxStock ?? stockRange.max}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         if (value >= (filterOptions.minStock ?? stockRange.min)) {
                           handleFilterChange('maxStock', value);
@@ -777,13 +783,13 @@ const ProductsPage = () => {
                       >
                         <Edit size={18} />
                       </button>
-                      <button 
+                      {/* <button 
                         onClick={() => handleDelete(product.id)}
                         className="text-red-600 hover:text-red-900"
                               title="Xóa"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>

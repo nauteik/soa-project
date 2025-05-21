@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { ArrowLeft, Edit } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
-import { getProductById, getSpecificationFields, deleteProductById, processImageUrl } from '../../services/productApi';
-import { IMAGES_BASE_URL } from '../../config/api';
+
+import { getProductById, getSpecificationFields, processImageUrl } from '../../services/productApi';
+
 import type { ProductDetail, SpecificationField } from '../../services/productApi';
 
 const ProductDetailPage = () => {
@@ -64,20 +65,20 @@ const ProductDetailPage = () => {
     navigate(`/products/edit/${id}`);
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
-      deleteProductById(id as string)
-        .then(() => {
-          console.log('Đã xóa sản phẩm thành công');
+  // const handleDelete = () => {
+  //   if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
+  //     deleteProductById(id as string)
+  //       .then(() => {
+  //         console.log('Đã xóa sản phẩm thành công');
           
-          navigate('/products');
-        })
-        .catch(error => {
-          console.error('Lỗi khi xóa sản phẩm:', error);
-          alert('Không thể xóa sản phẩm. Vui lòng thử lại sau.');
-        });
-    }
-  };
+  //         navigate('/products');
+  //       })
+  //       .catch(error => {
+  //         console.error('Lỗi khi xóa sản phẩm:', error);
+  //         alert('Không thể xóa sản phẩm. Vui lòng thử lại sau.');
+  //       });
+  //   }
+  // };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
@@ -165,13 +166,13 @@ const ProductDetailPage = () => {
             <Edit size={16} className="mr-1.5" />
             Chỉnh sửa
           </button>
-          <button
+          {/* <button
             onClick={handleDelete}
             className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
           >
             <Trash2 size={16} className="mr-1.5" />
             Xóa
-          </button>
+          </button> */}
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import axiosInstance from '../config/axios';
-import { API_BASE_URL } from '../config/api';
 
 interface CartItem {
   id: number;

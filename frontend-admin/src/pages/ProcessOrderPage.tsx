@@ -1,39 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Package, CheckCircle, XCircle, AlertCircle, CreditCard, Edit } from 'lucide-react';
-import { 
-  getOrderByIdForAdmin, 
-  updateOrderStatus, 
-  updateOrderItemStatus, 
-  updatePaymentStatus, 
-  formatPrice, 
+import { ArrowLeft, CheckCircle, CreditCard, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { IMAGES_BASE_URL } from '../config/api';
+import {
   formatDate,
+  formatPrice,
+  getOrderByIdForAdmin,
   getOrderStatusColor,
   getPaymentStatusColor,
-  OrderStatus,
   OrderItemStatus,
-  PaymentStatus,
+  OrderStatus,
   orderStatusDisplayNames,
-  paymentStatusDisplayNames,
-  orderItemStatusDisplayNames
+  PaymentStatus,
+  updateOrderItemStatus,
+  updateOrderStatus,
+  updatePaymentStatus,
 } from '../services/adminOrderApi';
 import { OrderResponse } from '../services/orderApi';
-import { IMAGES_BASE_URL } from '../config/api';
 
-// Mở rộng OrderItemDTO để phù hợp với dữ liệu từ API
-interface EnhancedOrderItemDTO {
-  id: number;
-  productId: number;
-  productName: string;
-  productImage?: string;
-  productSlug: string;
-  price: number;
-  discount: number;
-  quantity: number;
-  subtotal: number;
-  status: string;
-  statusDisplayName: string;
-}
 
 const ProcessOrderPage = () => {
   const { id } = useParams<{ id: string }>();

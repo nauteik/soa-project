@@ -116,6 +116,12 @@
 			<artifactId>aws-java-sdk-s3</artifactId>
 			<version>1.12.567</version>
 		</dependency>
+
+		<!-- Spring AOP Dependency -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

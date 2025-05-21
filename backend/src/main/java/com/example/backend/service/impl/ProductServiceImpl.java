@@ -615,6 +615,209 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
+     * Triển khai phương thức tìm kiếm sản phẩm theo từ khóa với các bộ lọc
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> searchProducts(
+            String keyword,
+            Long categoryId,
+            List<Long> brandIds,
+            Double minPrice,
+            Double maxPrice,
+            Map<String, List<String>> specifications,
+            String sortBy,
+            Integer skip,
+            Integer limit,
+            Boolean isActive) {
+        
+        // Bước 1: Tìm kiếm sản phẩm theo từ khóa
+        List<Product> searchResults = productRepository.findByKeyword(keyword);
+        
+        // Nếu có bộ lọc danh mục, lấy tất cả danh mục con và lọc sản phẩm
+        if (categoryId != null) {
+            List<Long> allCategoryIds = getAllChildCategoryIds(categoryId);
+            searchResults = searchResults.stream()
+                .filter(product -> product.getCategory() != null && 
+                        allCategoryIds.contains(product.getCategory().getId()))
+                .collect(Collectors.toList());
+        }
+        
+        // Lọc sản phẩm đang hoạt động nếu yêu cầu
+        if (isActive != null && isActive) {
+            searchResults = searchResults.stream()
+                .filter(product -> product.getIsActive())
+                .collect(Collectors.toList());
+        }
+        
+        // Bước 2: Áp dụng bộ lọc thương hiệu
+        if (brandIds != null && !brandIds.isEmpty()) {
+            searchResults = searchResults.stream()
+                .filter(product -> product.getBrand() != null && 
+                        brandIds.contains(product.getBrand().getId()))
+                .collect(Collectors.toList());
+        }
+        
+        // Bước 3: Áp dụng bộ lọc giá
+        if (minPrice != null && maxPrice != null) {
+            searchResults = searchResults.stream()
+                .filter(product -> {
+                    BigDecimal discountMultiplier = BigDecimal.ONE.subtract(
+                            BigDecimal.valueOf(product.getDiscount()).divide(BigDecimal.valueOf(100.0)));
+                    BigDecimal actualPrice = product.getPrice().multiply(discountMultiplier);
+                    
+                    return actualPrice.doubleValue() >= minPrice && actualPrice.doubleValue() <= maxPrice;
+                })
+                .collect(Collectors.toList());
+        } else if (minPrice != null) {
+            searchResults = searchResults.stream()
+                .filter(product -> {
+                    BigDecimal discountMultiplier = BigDecimal.ONE.subtract(
+                            BigDecimal.valueOf(product.getDiscount()).divide(BigDecimal.valueOf(100.0)));
+                    BigDecimal actualPrice = product.getPrice().multiply(discountMultiplier);
+                    
+                    return actualPrice.doubleValue() >= minPrice;
+                })
+                .collect(Collectors.toList());
+        } else if (maxPrice != null) {
+            searchResults = searchResults.stream()
+                .filter(product -> {
+                    BigDecimal discountMultiplier = BigDecimal.ONE.subtract(
+                            BigDecimal.valueOf(product.getDiscount()).divide(BigDecimal.valueOf(100.0)));
+                    BigDecimal actualPrice = product.getPrice().multiply(discountMultiplier);
+                    
+                    return actualPrice.doubleValue() <= maxPrice;
+                })
+                .collect(Collectors.toList());
+        }
+        
+        // Bước 4: Áp dụng bộ lọc thông số kỹ thuật
+        if (specifications != null && !specifications.isEmpty()) {
+            searchResults = searchResults.stream()
+                .filter(product -> {
+                    Map<String, Object> productSpecs = product.getSpecifications();
+                    
+                    // Nếu sản phẩm không có thông số kỹ thuật, không phù hợp
+                    if (productSpecs == null || productSpecs.isEmpty()) {
+                        return false;
+                    }
+                    
+                    // Kiểm tra tất cả bộ lọc thông số có khớp không
+                    for (Map.Entry<String, List<String>> entry : specifications.entrySet()) {
+                        String specKey = entry.getKey();
+                        List<String> allowedValues = entry.getValue();
+                        
+                        // Nếu không có giá trị cho thông số này, bỏ qua bộ lọc
+                        if (allowedValues == null || allowedValues.isEmpty()) {
+                            continue;
+                        }
+                        
+                        // Lấy giá trị của sản phẩm cho thông số này
+                        Object productSpecValue = productSpecs.get(specKey);
+                        
+                        // Nếu sản phẩm không có thông số này, không phù hợp
+                        if (productSpecValue == null) {
+                            return false;
+                        }
+                        
+                        // Xử lý khác nhau tùy theo kiểu dữ liệu
+                        boolean matchesAny = false;
+                        
+                        if (productSpecValue instanceof String || productSpecValue instanceof Number || productSpecValue instanceof Boolean) {
+                            // Đối với giá trị đơn
+                            String valueStr = String.valueOf(productSpecValue);
+                            matchesAny = allowedValues.contains(valueStr);
+                        } else if (productSpecValue instanceof List || productSpecValue instanceof Object[]) {
+                            // Đối với danh sách giá trị
+                            List<?> valueList;
+                            if (productSpecValue instanceof Object[]) {
+                                valueList = Arrays.asList((Object[]) productSpecValue);
+                            } else {
+                                valueList = (List<?>) productSpecValue;
+                            }
+                            
+                            // Kiểm tra nếu bất kỳ giá trị nào khớp
+                            for (Object item : valueList) {
+                                String itemStr = String.valueOf(item);
+                                if (allowedValues.contains(itemStr)) {
+                                    matchesAny = true;
+                                    break;
+                                }
+                            }
+                        } else if (productSpecValue instanceof Map) {
+                            // Đối với Map
+                            Map<?, ?> valueMap = (Map<?, ?>) productSpecValue;
+                            for (Object mapValue : valueMap.values()) {
+                                String mapValueStr = String.valueOf(mapValue);
+                                if (allowedValues.contains(mapValueStr)) {
+                                    matchesAny = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (!matchesAny) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                })
+                .collect(Collectors.toList());
+        }
+        
+        // Tính tổng số sản phẩm trước khi áp dụng sắp xếp và phân trang
+        int total = searchResults.size();
+        
+        // Bước 5: Sắp xếp kết quả
+        if (sortBy != null) {
+            switch (sortBy) {
+                case "price_asc":
+                    searchResults.sort(Comparator.comparing(p -> p.getPrice().multiply(
+                            BigDecimal.ONE.subtract(BigDecimal.valueOf(p.getDiscount()).divide(BigDecimal.valueOf(100.0))))));
+                    break;
+                case "price_desc":
+                    searchResults.sort((p1, p2) -> {
+                        BigDecimal p1ActualPrice = p1.getPrice().multiply(
+                                BigDecimal.ONE.subtract(BigDecimal.valueOf(p1.getDiscount()).divide(BigDecimal.valueOf(100.0))));
+                        BigDecimal p2ActualPrice = p2.getPrice().multiply(
+                                BigDecimal.ONE.subtract(BigDecimal.valueOf(p2.getDiscount()).divide(BigDecimal.valueOf(100.0))));
+                        return p2ActualPrice.compareTo(p1ActualPrice);
+                    });
+                    break;
+                case "best_selling":
+                    searchResults.sort(Comparator.comparing(Product::getQuantitySold).reversed());
+                    break;
+                case "newest":
+                default:
+                    searchResults.sort(Comparator.comparing(Product::getCreatedAt).reversed());
+                    break;
+            }
+        } else {
+            // Mặc định sắp xếp theo độ phù hợp (giữ nguyên thứ tự từ repository)
+        }
+        
+        // Bước 6: Áp dụng phân trang
+        if (skip != null && limit != null) {
+            int startIndex = Math.min(skip, total);
+            int endIndex = Math.min(startIndex + limit, total);
+            
+            if (startIndex < endIndex) {
+                searchResults = searchResults.subList(startIndex, endIndex);
+            } else {
+                searchResults = new ArrayList<>();
+            }
+        }
+        
+        // Chuẩn bị kết quả
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", searchResults);
+        result.put("total", total);
+        
+        return result;
+    }
+
+    /**
      * Tạo mới sản phẩm từ ProductCreateDTO
      * @param productDTO Thông tin sản phẩm mới
      * @return Sản phẩm đã được tạo

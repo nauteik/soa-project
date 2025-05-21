@@ -1,10 +1,10 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Star, ShoppingCart } from 'lucide-react';
+import { IMAGES_BASE_URL } from '@/config/api';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types/product';
-import { IMAGES_BASE_URL } from '@/config/api';
 import { formatVND } from '@/utils/formatters';
+import React from 'react';
+import { Link } from 'react-router-dom';
+
 import AddToCartButton from './AddToCartButton';
 
 interface ProductCardProps {
@@ -74,7 +74,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
 
       {/* Product details */}
       <div className="p-4">
-        {/* Rating */}
+        {/* Rating
         <div className="flex items-center mb-1">
           {[...Array(5)].map((_, i) => (
             <Star 
@@ -88,7 +88,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
           <span className="text-muted-foreground text-xs ml-1">
             {rating ? rating.toFixed(1) : "N/A"}
           </span>
-        </div>
+        </div> */}
 
         {/* Name */}
         <Link to={productUrl}>

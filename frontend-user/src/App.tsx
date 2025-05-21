@@ -1,30 +1,31 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import ProductDetail from './pages/ProductDetail';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
+
+import PrivateRoute from './components/common/PrivateRoute';
 import MainLayout from './components/layout/MainLayout';
-// import CategoryProducts from './pages/CategoryProducts';
-import ProductPage from './pages/ProductPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import VerifyAccountPage from './pages/VerifyAccountPage';
+import UserLayout from './components/layout/UserLayout';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-import PrivateRoute from './components/common/PrivateRoute';
-import { Toaster } from 'sonner'
-
-// Layout và các trang cá nhân của người dùng
-import UserLayout from './components/layout/UserLayout';
-import ProfilePage from './pages/user/ProfilePage';
-import ChangePasswordPage from './pages/user/ChangePasswordPage';
-import AddressPage from './pages/user/AddressPage';
-import OrdersPage from './pages/user/OrdersPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
-import OrderSuccessPage from './pages/OrderSuccessPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import ProductDetail from './pages/ProductDetail';
+import ProductPage from './pages/ProductPage';
+import RegisterPage from './pages/RegisterPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import SearchPage from './pages/SearchPage';
+import AddressPage from './pages/user/AddressPage';
+import ChangePasswordPage from './pages/user/ChangePasswordPage';
+import OrdersPage from './pages/user/OrdersPage';
+import ProfilePage from './pages/user/ProfilePage';
+import VerifyAccountPage from './pages/VerifyAccountPage';
 
+// import CategoryProducts from './pages/CategoryProducts';
+// Layout và các trang cá nhân của người dùng
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -38,6 +39,7 @@ const App: React.FC = () => {
               {/* <Route path="/category/:slug" element={<CategoryProducts />} /> */}
               <Route path="/:categorySlug" element={<ProductPage />} />
               <Route path="/category/:slug" element={<ProductPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />

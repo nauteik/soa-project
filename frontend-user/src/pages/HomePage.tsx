@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Laptop, Monitor, Keyboard, Mouse, HardDrive, Cable, Usb } from 'lucide-react';
-import HeroBanner from '@/components/common/HeroBanner';
 import CategoryCard from '@/components/common/CategoryCard';
+import HeroBanner from '@/components/common/HeroBanner';
 import ProductCard from '@/components/product/ProductCard';
-import { useProducts } from '@/hooks/useProducts';
-import { useCategories } from '@/hooks/useCategories';
-import { useBrands } from '@/hooks/useBrands';
-import { Product } from '@/types/product';
-import { IMAGES_BASE_URL, API_BASE_URL, ENDPOINTS } from '@/config/api';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { API_BASE_URL, ENDPOINTS, IMAGES_BASE_URL } from '@/config/api';
+import { useBrands } from '@/hooks/useBrands';
+import { useCategories } from '@/hooks/useCategories';
+import { useProducts } from '@/hooks/useProducts';
+import { Product } from '@/types/product';
 import Autoplay from 'embla-carousel-autoplay';
+import { Cable, ChevronRight, HardDrive, Keyboard, Laptop, Monitor, Mouse, Usb } from 'lucide-react';
+import React, {useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
   const { products, isLoading: productsLoading, error: productsError } = useProducts({ limit: 8, is_featured: true });
@@ -221,11 +220,33 @@ const HomePage: React.FC = () => {
               <p>Không thể tải sản phẩm. Vui lòng thử lại sau.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <Carousel
+              className="w-full relative" 
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 5000,
+                  stopOnInteraction: true,
+                }),
+              ]}
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {products.map((product: Product) => (
+                  <CarouselItem key={product.id} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 transition-all duration-300 hover:scale-[1.02]">
+                    <div className="p-1 h-full">
+                      <ProductCard product={product} className="h-full" />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="absolute inset-y-0 -left-4 -right-4 flex items-center justify-between pointer-events-none">
+                <CarouselPrevious className="pointer-events-auto opacity-70 hover:opacity-100" />
+                <CarouselNext className="pointer-events-auto opacity-70 hover:opacity-100" />
+              </div>
+            </Carousel>
           )}
         </div>
       </section>

@@ -1,14 +1,17 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import { ArrowLeft, ChevronDown, Plus, Save, UploadCloud, X } from 'lucide-react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, X, UploadCloud, ChevronDown, Check } from 'lucide-react';
-import { createProduct, getSpecificationFields, getSpecificationValues } from '../../services/productApi';
-import { getAllCategories } from '../../services/categoryApi';
-import { getAllBrands, getBrandsByCategoryId } from '../../services/brandApi';
-import { Category } from '../../services/categoryApi';
-import { Brand } from '../../services/brandApi';
-import { SpecificationField } from '../../services/productApi';
-import { formatVND, formatDiscountedPrice } from '../../utils/formatters';
 import { toast } from 'sonner';
+
+import { Brand, getAllBrands, getBrandsByCategoryId } from '../../services/brandApi';
+import { Category, getAllCategories } from '../../services/categoryApi';
+import {
+  createProduct,
+  getSpecificationFields,
+  getSpecificationValues,
+  SpecificationField,
+} from '../../services/productApi';
+import { formatDiscountedPrice, formatVND } from '../../utils/formatters';
 
 interface ProductFormData {
   name: string;
@@ -202,11 +205,6 @@ const ProductCreatePage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Xử lý thay đổi checkbox
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: checked }));
-  };
 
   // Xử lý thay đổi giá với định dạng VND
   const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {

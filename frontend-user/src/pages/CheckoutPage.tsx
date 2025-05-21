@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import orderApi, { CreateOrderRequest } from "../services/orderApi";
+import { PaymentMethod } from "../types/order";
 import { useAuth } from "../context/AuthContext";
 import AddressFormModal from "../components/common/AddressFormModal";
 import * as addressApi from "../services/addressApi";
@@ -17,7 +18,7 @@ const checkoutSchema = z.object({
   shippingAddressId: z.number({
     required_error: "Vui lòng chọn địa chỉ giao hàng",
   }),
-  paymentMethod: z.enum(["COD", "VNPAY", "MOMO"], {
+  paymentMethod: z.nativeEnum(PaymentMethod, {
     required_error: "Vui lòng chọn phương thức thanh toán",
   }),
   note: z.string().optional(),
@@ -43,7 +44,7 @@ const CheckoutPage = () => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      paymentMethod: "COD",
+      paymentMethod: PaymentMethod.COD,
       agreeToTerms: false,
       note: "",
     },
@@ -299,14 +300,14 @@ const CheckoutPage = () => {
             <h2 className="text-lg font-semibold mb-4">Phương thức thanh toán</h2>
             <div className="space-y-4">
               <label 
-                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === "COD" ? "border-primary bg-primary/5" : "border-gray-200"}`}
+                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === PaymentMethod.COD ? "border-primary bg-primary/5" : "border-gray-200"}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
                     <input
                       type="radio"
                       id="payment-cod"
-                      value="COD"
+                      value={PaymentMethod.COD}
                       {...register("paymentMethod")}
                       className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
                     />
@@ -321,14 +322,14 @@ const CheckoutPage = () => {
               </label>
 
               <label 
-                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === "VNPAY" ? "border-primary bg-primary/5" : "border-gray-200"}`}
+                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === PaymentMethod.VNPAY ? "border-primary bg-primary/5" : "border-gray-200"}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
                     <input
                       type="radio"
                       id="payment-vnpay"
-                      value="VNPAY"
+                      value={PaymentMethod.VNPAY}
                       {...register("paymentMethod")}
                       className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
                     />
@@ -343,14 +344,14 @@ const CheckoutPage = () => {
               </label>
 
               <label 
-                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === "MOMO" ? "border-primary bg-primary/5" : "border-gray-200"}`}
+                className={`block border p-4 rounded-md cursor-pointer ${watch("paymentMethod") === PaymentMethod.MOMO ? "border-primary bg-primary/5" : "border-gray-200"}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
                     <input
                       type="radio"
                       id="payment-momo"
-                      value="MOMO"
+                      value={PaymentMethod.MOMO}
                       {...register("paymentMethod")}
                       className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
                     />

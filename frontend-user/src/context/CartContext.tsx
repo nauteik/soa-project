@@ -83,19 +83,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   // Lấy số lượng sản phẩm trong giỏ hàng
-  const fetchCartCount = async () => {
-    if (!isAuthenticated) return;
+  // const fetchCartCount = async () => {
+  //   if (!isAuthenticated) return;
     
-    try {
-      const count = await cartApi.getCartItemsCount();
-      setItemCount(count || 0);
-    } catch (err: any) {
-      console.error('Error fetching cart count:', err);
-      if (err.response?.status === 401) {
-        handleAuthError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
-      }
-    }
-  };
+  //   try {
+  //     const count = await cartApi.getCartItemsCount();
+  //     setItemCount(count || 0);
+  //   } catch (err: any) {
+  //     console.error('Error fetching cart count:', err);
+  //     if (err.response?.status === 401) {
+  //       handleAuthError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+  //     }
+  //   }
+  // };
 
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (payload: AddToCartPayload) => {

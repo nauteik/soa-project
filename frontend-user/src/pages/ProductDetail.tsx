@@ -1,14 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, ShoppingCart, Heart, Share2, MinusCircle, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useProductBySlug } from '@/hooks/useProductBySlug';
-import { useCategoryHierarchy } from '@/hooks/useCategoryHierarchy';
-import { IMAGES_BASE_URL } from '@/config/api';
-import { formatVND } from '@/utils/formatters';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import AddToCartButton from '@/components/product/AddToCartButton';
+import {
+  Carousel,
+  CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { IMAGES_BASE_URL } from '@/config/api';
+import { useCategoryHierarchy } from '@/hooks/useCategoryHierarchy';
+import { useProductBySlug } from '@/hooks/useProductBySlug';
+import { cn } from '@/lib/utils';
 import { fetchCategorySpecifications, SpecificationField } from '@/services/productsApi';
+import { formatVND } from '@/utils/formatters';
+import { ArrowLeft, ChevronLeft, ChevronRight, Heart, MinusCircle, PlusCircle, Share2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 const ProductDetail: React.FC = () => {
   // Lấy productSlug từ URL (hỗ trợ cả định dạng URL cũ và mới)
@@ -187,17 +194,11 @@ const ProductDetail: React.FC = () => {
 
   // Tìm hình ảnh chính hoặc sử dụng hình ảnh đầu tiên
   const images = product.images || [];
-  const activeImage = images[activeImageIndex] || { image_url: 'placeholder.jpg' };
   const discountedPrice = product.price * (1 - product.discount / 100);
   
   // Get the correct image URL with proper fallback
   const getImageUrl = (imageUrl?: string) => {
     return imageUrl ? `${IMAGES_BASE_URL}${imageUrl}` : '/static/images/placeholder.jpg';
-  };
-  
-  // Tạo URL theo định dạng mới
-  const generateProductUrl = (categorySlug: string, productSlug: string) => {
-    return `/${categorySlug}/${productSlug}`;
   };
   
   return (
@@ -332,7 +333,7 @@ const ProductDetail: React.FC = () => {
           )}
           <h1 className="text-3xl font-bold">{product.name}</h1>
           
-          {/* Đánh giá */}
+          {/* Đánh giá
           <div className="flex items-center">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -350,7 +351,7 @@ const ProductDetail: React.FC = () => {
             <span className="text-sm text-muted-foreground ml-2">
               Dựa trên {product.quantitySold || 0} đánh giá
             </span>
-          </div>
+          </div> */}
           
           {/* Giá */}
           <div className="flex items-baseline space-x-3 pt-2">
@@ -477,7 +478,7 @@ const ProductDetail: React.FC = () => {
           <h2 className="text-2xl font-bold mb-6">Thông số kỹ thuật đầy đủ</h2>
           <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
             {product.specifications && Object.entries(product.specifications)
-              .filter(([key, value]) => typeof value !== 'object')
+              .filter(([value]) => typeof value !== 'object')
               .map(([key, value]) => (
                 <div key={key} className="flex py-2 border-b">
                   <span className="w-1/2 text-muted-foreground capitalize">

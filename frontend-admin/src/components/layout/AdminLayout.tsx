@@ -1,25 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  Settings, 
+import {
+  BarChart3,
+  ChevronDown,
+  Folder,
+  LayoutDashboard,
+  List,
   LogOut,
   Menu,
-  X,
-  Bell,
-  ChevronDown,
-  Eye,
+  Package,
   Plus,
-  Edit as EditIcon,
-  List,
+  ShoppingCart,
   UserPlus,
-  BarChart3,
-  Folder
+  Users,
+  X,
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../../context/AuthContext';
 
 // Cấu trúc dữ liệu cho các mục menu
 interface MenuItem {
@@ -28,6 +25,7 @@ interface MenuItem {
   path: string;
   children?: MenuItem[];
   isOpen?: boolean;
+  requiredRoles?: string[];
 }
 
 const AdminLayout = () => {
@@ -35,13 +33,21 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    { icon: <LayoutDashboard size={20} />, title: 'Dashboard', path: '/dashboard' },
+  
+  // Danh sách menu với phân quyền
+  const allMenuItems: MenuItem[] = useMemo(() => [
+    { 
+      icon: <LayoutDashboard size={20} />, 
+      title: 'Dashboard', 
+      path: '/dashboard',
+      requiredRoles: ['MANAGER', 'ORDER_STAFF', 'PRODUCT_STAFF'] 
+    },
     { 
       icon: <Folder size={20} />, 
       title: 'Danh mục', 
       path: '/categories',
       isOpen: false,
+      requiredRoles: ['MANAGER', 'PRODUCT_STAFF'],
       children: [
         { icon: <List size={16} />, title: 'Danh sách', path: '/categories/list' },
         { icon: <Plus size={16} />, title: 'Thêm mới', path: '/categories/create' },
@@ -52,25 +58,54 @@ const AdminLayout = () => {
       title: 'Sản phẩm', 
       path: '/products',
       isOpen: false,
+      requiredRoles: ['MANAGER', 'PRODUCT_STAFF'],
       children: [
         { icon: <List size={16} />, title: 'Danh sách', path: '/products/list' },
         { icon: <Plus size={16} />, title: 'Thêm mới', path: '/products/create' },
       ]
     },
-    { icon: <ShoppingCart size={20} />, title: 'Đơn hàng', path: '/orders' },
+    { 
+      icon: <ShoppingCart size={20} />, 
+      title: 'Đơn hàng', 
+      path: '/orders',
+      requiredRoles: ['MANAGER', 'ORDER_STAFF']
+    },
     { 
       icon: <Users size={20} />, 
       title: 'Người dùng', 
       path: '/users',
       isOpen: false,
+      requiredRoles: ['MANAGER'],
       children: [
         { icon: <List size={16} />, title: 'Danh sách', path: '/users' },
         { icon: <UserPlus size={16} />, title: 'Thêm mới', path: '/users/create' },
       ]
     },
-    { icon: <BarChart3 size={20} />, title: 'Báo cáo', path: '/reports' },
+    { 
+      icon: <BarChart3 size={20} />, 
+      title: 'Báo cáo', 
+      path: '/reports',
+      requiredRoles: ['MANAGER']
+    },
+  ], []);
+  
+  // Lọc menu theo quyền người dùng
+  const filteredMenuItems = useMemo(() => {
+    if (!user) return [];
     
-  ]);
+    return allMenuItems.filter(item => {
+      // Nếu không có yêu cầu vai trò cụ thể hoặc người dùng có vai trò được yêu cầu
+      return !item.requiredRoles || item.requiredRoles.includes(user.role);
+    });
+  }, [allMenuItems, user]);
+  
+  // State lưu trữ menu được lọc và trạng thái đóng/mở
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(filteredMenuItems);
+  
+  // Cập nhật menu khi người dùng thay đổi
+  useEffect(() => {
+    setMenuItems(filteredMenuItems);
+  }, [filteredMenuItems]);
   
   // Tự động mở menu dựa trên đường dẫn hiện tại
   useEffect(() => {
@@ -93,6 +128,38 @@ const AdminLayout = () => {
       return { ...item, isOpen: item.isOpen || false };
     }));
   }, [location.pathname]);
+  
+  // Chuyển hướng đến trang dashboard nếu người dùng không có quyền truy cập trang hiện tại
+  useEffect(() => {
+    if (user && location.pathname !== '/dashboard') {
+      const currentPath = location.pathname;
+      const canAccess = filteredMenuItems.some(item => {
+        if (item.path === currentPath) return true;
+        
+        // Kiểm tra nếu đường dẫn bắt đầu bằng đường dẫn của menu
+        if (currentPath.startsWith(`${item.path}/`)) {
+          // Đặc biệt cho đường dẫn /orders/process/ - cho phép MANAGER và ORDER_STAFF
+          if (currentPath.includes('/orders/process/') && 
+              (user.role === 'MANAGER' || user.role === 'ORDER_STAFF')) {
+            return true;
+          }
+          
+          return true; // Nếu là subpath của menu item thì cho phép truy cập
+        }
+        
+        if (item.children) {
+          return item.children.some(child => 
+            child.path === currentPath || currentPath.startsWith(`${child.path}/`)
+          );
+        }
+        return false;
+      });
+      
+      if (!canAccess) {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, location.pathname, filteredMenuItems, navigate]);
   
   const handleLogout = () => {
     logout();

@@ -1,15 +1,19 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import { ArrowLeft, ChevronDown, Plus, Save, UploadCloud, X } from 'lucide-react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, X, UploadCloud, ChevronDown, Check } from 'lucide-react';
-import { getProductById, updateProduct, getSpecificationFields, getSpecificationValues, ProductDetail, ProductImage as APIProductImage } from '../../services/productApi';
-import { getAllCategories } from '../../services/categoryApi';
-import { getAllBrands, getBrandsByCategoryId } from '../../services/brandApi';
-import { Category } from '../../services/categoryApi';
-import { Brand } from '../../services/brandApi';
-import { SpecificationField } from '../../services/productApi';
-import { formatVND, formatDiscountedPrice } from '../../utils/formatters';
 import { toast } from 'sonner';
+
 import { IMAGES_BASE_URL } from '../../config/api';
+import { Brand, getAllBrands, getBrandsByCategoryId } from '../../services/brandApi';
+import { Category, getAllCategories } from '../../services/categoryApi';
+import {
+  getProductById,
+  getSpecificationFields,
+  getSpecificationValues,
+  SpecificationField,
+  updateProduct,
+} from '../../services/productApi';
+import { formatDiscountedPrice, formatVND } from '../../utils/formatters';
 
 interface ProductFormData {
   name: string;
@@ -75,11 +79,11 @@ const ProductEditPage = () => {
     specifications: {}
   });
 
-  // Dữ liệu ban đầu để so sánh khi có thay đổi
-  const [initialData, setInitialData] = useState<ProductDetail | null>(null);
+  // // Dữ liệu ban đầu để so sánh khi có thay đổi
+  // const [initialData, setInitialData] = useState<ProductDetail | null>(null);
 
-  // Preview hình ảnh
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // // Preview hình ảnh
+  // const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Load categories on mount
   useEffect(() => {
@@ -282,11 +286,11 @@ const ProductEditPage = () => {
     }
   };
 
-  // Xử lý thay đổi checkbox
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: checked }));
-  };
+  // // Xử lý thay đổi checkbox
+  // const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   const { name, checked } = e.target;
+  //   setFormData(prev => ({ ...prev, [name]: checked }));
+  // };
 
   // Xử lý thay đổi giá với định dạng VND
   const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -685,7 +689,8 @@ const ProductEditPage = () => {
       });
       
       // Gọi API để cập nhật sản phẩm
-      const response = await updateProduct(Number(id), productData);
+      // const response = await updateProduct(Number(id), productData);
+      await updateProduct(Number(id), productData);
       
       // Hiển thị thông báo thành công
       toast.success('Sản phẩm đã được cập nhật thành công!');

@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Người dùng chưa đăng nhập');
       }
       
-      const updatedUser = await authApi.updateUserProfile(token, user.id, userData);
+      const updatedUser = await authApi.updateUserProfile(token, userData);
       setUser(updatedUser);
       localStorage.setItem('auth_user', JSON.stringify(updatedUser));
     } catch (err) {

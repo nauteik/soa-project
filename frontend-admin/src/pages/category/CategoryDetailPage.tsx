@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { ArrowLeft, ChevronRight, Edit, Info, List, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, List, Eye, ChevronRight, Info, Settings } from 'lucide-react';
-import { getCategoryById, Category, getRootCategory, getSubcategories } from '../../services/categoryApi';
 import { toast } from 'sonner';
+
+import { Category, getCategoryById, getRootCategory, getSubcategories } from '../../services/categoryApi';
 
 interface SpecificationField {
   key: string;

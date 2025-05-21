@@ -1407,9 +1407,9 @@ public class DataLoader implements CommandLineRunner {
             order.setUpdatedAt(orderDate);
             
             // Tạo order number độc nhất dựa trên thời gian và một số ngẫu nhiên để đảm bảo không trùng lặp
-            String customOrderNumber = "OD" + orderDate.format(DateTimeFormatter.ofPattern("yyMMdd")) + 
-                                      String.format("%04d", i + 1) + 
-                                      String.format("%03d", random.nextInt(1000));
+            String timestamp = orderDate.format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+            String randomCode = String.format("%04d", random.nextInt(10000));
+            String customOrderNumber = "OD" + timestamp + randomCode;
             order.setOrderNumber(customOrderNumber);
             
             // Thêm sản phẩm vào đơn hàng (2-4 sản phẩm)

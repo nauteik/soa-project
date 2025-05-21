@@ -5,7 +5,6 @@ import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.model.*;
 import com.example.backend.repository.*;
 import com.example.backend.service.OrderService;
-import com.example.backend.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +19,10 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderStatusHistoryRepository statusHistoryRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final UserAddressRepository addressRepository;
     private final ProductRepository productRepository;
-    private final PaymentService paymentService;
 
     @Override
     @Transactional

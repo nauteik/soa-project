@@ -15,7 +15,8 @@ export enum PaymentStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
   FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
+  REFUNDED = 'REFUNDED',
+  COD_PENDING = 'COD_PENDING'
 }
 
 // Định nghĩa enum cho phương thức thanh toán
@@ -88,6 +89,7 @@ export interface ShippingAddress {
   fullName: string;
   mobileNo: string;
   fullAddress: string;
+  street: string;
   ward: string;
   district: string;
   city: string;

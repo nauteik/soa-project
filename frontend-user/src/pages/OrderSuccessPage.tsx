@@ -1,10 +1,12 @@
-﻿import { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
-import { CheckCircle2, ShoppingBag, ChevronRight } from "lucide-react";
-import orderApi, { Order } from "../services/orderApi";
-import { formatCurrency } from "../utils/format";
-import { useCart } from "../context/CartContext";
-import { Button } from "../components/ui/button";
+﻿import { CheckCircle2, ChevronRight, ShoppingBag } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+
+import { Button } from '../components/ui/button';
+import { useCart } from '../context/CartContext';
+import orderApi from '../services/orderApi';
+import { Order } from '../types/order';
+import { formatCurrency } from '../utils/format';
 
 const OrderSuccessPage = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
@@ -39,7 +41,7 @@ const OrderSuccessPage = () => {
   const formatAddress = (order: Order | null) => {
     if (!order || !order.shippingAddress) return "";
     const addr = order.shippingAddress;
-    return `${addr.street || ""}, ${addr.ward || ""}, ${addr.district || ""}, ${addr.province || ""}`.replace(/,\s*,/g, ",").replace(/^,\s*|,\s*$/g, "");
+    return `${addr.fullAddress || ""}, ${addr.street || ""}, ${addr.ward || ""}, ${addr.district || ""}, ${addr.city || ""}`.replace(/,\s*,/g, ",").replace(/^,\s*|,\s*$/g, "");
   };
 
   if (loading) {
@@ -86,8 +88,8 @@ const OrderSuccessPage = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Trạng thái thanh toán:</span>
-                <span className={`font-medium ${order.paymentStatus === "COMPLETED" ? "text-green-600" : "text-yellow-600"}`}>
-                  {order.paymentStatus === "COMPLETED"
+                <span className={`font-medium ${order.paymentStatus === "PAID" ? "text-green-600" : "text-yellow-600"}`}>
+                  {order.paymentStatus === "PAID"
                     ? "Đã thanh toán"
                     : "Chưa thanh toán"}
                 </span>

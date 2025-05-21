@@ -13,10 +13,12 @@ import java.io.IOException;
 public class FileStorageService {
 
     private final S3StorageService s3StorageService;
+    private final LogService logService;
 
     @Autowired
-    public FileStorageService(S3StorageService s3StorageService) {
+    public FileStorageService(S3StorageService s3StorageService, LogService logService) {
         this.s3StorageService = s3StorageService;
+        this.logService = logService;
     }
 
     /**
@@ -27,6 +29,7 @@ public class FileStorageService {
     public String store(MultipartFile file) {
         try {
             if (file.isEmpty()) {
+                logService.warn("Cố gắng lưu trữ file trống");
                 throw new RuntimeException("Failed to store empty file");
             }
             
@@ -34,8 +37,11 @@ public class FileStorageService {
             String fullUrl = s3StorageService.store(file);
             
             // Trích xuất tên file từ URL đầy đủ
-            return extractFilenameFromUrl(fullUrl);
+            String filename = extractFilenameFromUrl(fullUrl);
+            logService.info("Đã lưu trữ file với tên được tạo: " + filename);
+            return filename;
         } catch (IOException e) {
+            logService.error("Lỗi khi lưu trữ file", e);
             throw new RuntimeException("Failed to store file", e);
         }
     }
@@ -49,15 +55,18 @@ public class FileStorageService {
     public String storeWithName(MultipartFile file, String filename) {
         try {
             if (file.isEmpty()) {
+                logService.warn("Cố gắng lưu trữ file trống với tên: " + filename);
                 throw new RuntimeException("Failed to store empty file");
             }
             
             // Sử dụng S3StorageService để lưu trữ
-            String fullUrl = s3StorageService.storeWithName(file, filename);
+            s3StorageService.storeWithName(file, filename);
             
             // Chỉ trả về tên file để giữ tương thích với interface cũ
+            logService.info("Đã lưu trữ file với tên chỉ định: " + filename);
             return filename;
         } catch (IOException e) {
+            logService.error("Lỗi khi lưu trữ file với tên chỉ định: " + filename, e);
             throw new RuntimeException("Failed to store file", e);
         }
     }
@@ -68,8 +77,20 @@ public class FileStorageService {
      * @return true if successful, false otherwise
      */
     public boolean delete(String filename) {
+        // Ghi log trước khi xóa
+        logService.info("Yêu cầu xóa file: " + filename);
+        
         // Chuyển hướng sang S3StorageService
-        return s3StorageService.delete(filename);
+        boolean result = s3StorageService.delete(filename);
+        
+        // Ghi log kết quả
+        if (result) {
+            logService.info("Đã xóa file thành công: " + filename);
+        } else {
+            logService.warn("Không thể xóa file: " + filename);
+        }
+        
+        return result;
     }
     
     /**

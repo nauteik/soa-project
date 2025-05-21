@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Eye, AlertCircle, Loader2 } from 'lucide-react';
+
+import OrderDetailModal from '../../components/user/OrderDetailModal';
 import orderApi from '../../services/orderApi';
 import { Order, OrderStatus, orderStatusColors } from '../../types/order';
 import { formatCurrency } from '../../utils/format';
-import OrderDetailModal from '../../components/user/OrderDetailModal';
 
 // Component AlertDialog cho xác nhận hủy đơn hàng
 interface AlertDialogProps {
@@ -13,7 +14,7 @@ interface AlertDialogProps {
   children: React.ReactNode;
 }
 
-const AlertDialog: React.FC<AlertDialogProps> = ({ open, onOpenChange, children }) => {
+const AlertDialog: React.FC<AlertDialogProps> = ({ open, children }) => {
   if (!open) return null;
   
   return (

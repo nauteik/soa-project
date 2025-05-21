@@ -1,5 +1,5 @@
-import axiosInstance from "../config/axios";
-import { Order, OrderStatus, PaymentMethod, PaymentStatus } from "../types/order";
+import axiosInstance from '../config/axios';
+import { Order, PaymentMethod } from '../types/order';
 
 export interface CreateOrderRequest {
   cartItemIds: number[];

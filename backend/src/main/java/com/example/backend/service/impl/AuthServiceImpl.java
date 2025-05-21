@@ -15,6 +15,8 @@ import com.example.backend.repository.UserRepository;
 import com.example.backend.service.AuthService;
 import com.example.backend.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     
     // Pattern mật khẩu: không có khoảng trắng
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^\\S+$");
@@ -68,37 +71,55 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public boolean verifyEmail(String token) {
+        log.info("Bắt đầu quá trình xác thực token: {}", token);
+        
         // Kiểm tra token có hợp lệ không
         if (!emailVerificationService.isTokenValid(token)) {
+            log.warn("Token không hợp lệ hoặc đã hết hạn: {}", token);
             return false;
+        }
+        
+        // Nếu token đã được sử dụng thành công trước đó
+        if (emailVerificationService.isTokenUsed(token)) {
+            log.info("Token đã được sử dụng thành công trước đó, trả về kết quả thành công: {}", token);
+            return true;
         }
         
         // Lấy thông tin đăng ký từ token
         UserRegistrationDto registrationDto = emailVerificationService.getRegistrationData(token);
         if (registrationDto == null) {
+            log.warn("Không thể lấy thông tin đăng ký từ token: {}", token);
             return false;
         }
         
         // Kiểm tra email đã tồn tại chưa (nếu có người đăng ký trùng email trong thời gian chờ xác nhận)
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
+            log.warn("Email đã tồn tại trong hệ thống: {}", registrationDto.getEmail());
             throw new BadRequestException("Email đã được sử dụng");
         }
         
-        // Tạo user mới
-        User user = new User();
-        user.setName(registrationDto.getName());
-        user.setEmail(registrationDto.getEmail());
-        user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
-        user.setMobileNumber(registrationDto.getMobileNumber());
-        user.setRole(UserRole.USER); // Mặc định tất cả người dùng mới đều là USER
-        
-        // Lưu user vào DB
-        userRepository.save(user);
-        
-        // Xác nhận token để gửi email thông báo đăng ký thành công
-        emailVerificationService.confirmVerification(token);
-        
-        return true;
+        try {
+            // Tạo user mới
+            User user = new User();
+            user.setName(registrationDto.getName());
+            user.setEmail(registrationDto.getEmail());
+            user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+            user.setMobileNumber(registrationDto.getMobileNumber());
+            user.setRole(UserRole.USER); // Mặc định tất cả người dùng mới đều là USER
+            
+            // Lưu user vào DB
+            userRepository.save(user);
+            log.info("Đã tạo người dùng mới thành công: {}", registrationDto.getEmail());
+            
+            // Xác nhận token để gửi email thông báo đăng ký thành công
+            emailVerificationService.confirmVerification(token);
+            log.info("Xác thực email thành công cho: {}", registrationDto.getEmail());
+            
+            return true;
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo người dùng và xác thực email: {}", e.getMessage(), e);
+            return false;
+        }
     }
     
     @Override
@@ -298,6 +319,12 @@ public class AuthServiceImpl implements AuthService {
         passwordResetService.confirmPasswordReset(resetPasswordDto.getToken());
         
         return true;
+    }
+    
+    @Override
+    public void debugEmailVerificationTokens() {
+        log.info("Debugging email verification tokens...");
+        emailVerificationService.printAllTokens();
     }
     
     /**

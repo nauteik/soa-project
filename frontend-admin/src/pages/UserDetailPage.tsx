@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { ArrowLeft, Edit, Eye, MapPin, Package, ShoppingBag, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, MapPin, ShoppingBag, Eye, Package, X } from 'lucide-react';
-import { getUserById, deleteUser, updateUserStatus, UserResponse } from '../services/userApi';
-import { getUserAddressesById, AddressResponse } from '../services/userApi';
-import { getUserOrders, OrderResponse } from '../services/orderApi';
+
 import { IMAGES_BASE_URL } from '../config/api';
+import { getUserOrders, OrderResponse } from '../services/orderApi';
+import { AddressResponse, getUserAddressesById, getUserById, UserResponse } from '../services/userApi';
 
 const UserDetailPage = () => {
   const navigate = useNavigate();
@@ -69,18 +69,18 @@ const UserDetailPage = () => {
     navigate(`/users/edit/${id}`);
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
-      try {
-        await deleteUser(Number(id));
-        console.log('Đã xóa người dùng thành công');
-        navigate('/users');
-      } catch (error) {
-        console.error('Lỗi khi xóa người dùng:', error);
-        alert('Không thể xóa người dùng. Vui lòng thử lại sau.');
-      }
-    }
-  };
+  // const handleDelete = async () => {
+  //   if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
+  //     try {
+  //       await deleteUser(Number(id));
+  //       console.log('Đã xóa người dùng thành công');
+  //       navigate('/users');
+  //     } catch (error) {
+  //       console.error('Lỗi khi xóa người dùng:', error);
+  //       alert('Không thể xóa người dùng. Vui lòng thử lại sau.');
+  //     }
+  //   }
+  // };
 
  
 
@@ -97,6 +97,9 @@ const UserDetailPage = () => {
         minute: '2-digit'
       }).format(date);
     } catch (error) {
+      if (error instanceof Error) {
+        return 'Không có';
+      }
       return "Không có";
     }
   };
@@ -600,7 +603,9 @@ const UserDetailPage = () => {
                   <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-500 mb-2">Lịch sử đơn hàng</h4>
                     <div className="space-y-2">
-                      {selectedOrder.statusHistory.map((history, index) => (
+                      {[...selectedOrder.statusHistory]
+                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map((history) => (
                         <div key={history.id} className="bg-gray-50 p-3 rounded-md flex justify-between">
                           <div>
                             <span className="text-sm">{history.statusDisplayName}</span>

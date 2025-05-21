@@ -78,8 +78,10 @@ const Header = () => {
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Search:', searchQuery);
-    // Implement search functionality
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
   };
 
   const handleLogout = () => {

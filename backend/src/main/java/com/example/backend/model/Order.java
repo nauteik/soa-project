@@ -89,9 +89,9 @@ public class Order {
     
     private String generateOrderNumber() {
         LocalDateTime now = LocalDateTime.now();
-        // Thêm số ngẫu nhiên 6 chữ số để tránh trùng lặp khi nhiều người dùng tạo cùng lúc
-        String randomNum = String.format("%03d", new Random().nextInt(999));
-        return "OD" + now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + randomNum;
+        // Thêm số ngẫu nhiên 4 chữ số để tránh trùng lặp khi nhiều người dùng tạo cùng lúc
+        String randomCode = String.format("%04d", new Random().nextInt(10000));
+        return "OD" + now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + randomCode;
     }
     
     // Phương thức để cập nhật trạng thái đơn hàng và lưu lịch sử

@@ -1,6 +1,4 @@
 package com.example.backend.service.impl;
-
-import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -136,7 +134,7 @@ public class PasswordResetService {
         public String getEmail() {
             return email;
         }
-        
+
         public String getName() {
             return name;
         }

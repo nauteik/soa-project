@@ -1,16 +1,17 @@
-import { Search, Filter, Eye, ClipboardList, ArrowUp, ArrowDown, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import Slider from '@mui/material/Slider';
+import { ArrowDown, ArrowUp, ClipboardList, Filter, Search, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Slider from '@mui/material/Slider';
-import { 
-  getAllOrders, 
-  formatPrice, 
+
+import {
   formatDate,
+  formatPrice,
+  getAllOrders,
   getOrderStatusColor,
   getPaymentStatusColor,
   OrderStatus,
-  PaymentStatus
+  PaymentStatus,
 } from '../services/adminOrderApi';
 import { OrderResponse } from '../services/orderApi';
 
@@ -351,6 +352,9 @@ const OrdersPage = () => {
                     <Slider
                       value={filterOptions.minAmount ?? amountRange.min}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         // Chỉ cập nhật nếu minAmount <= maxAmount
                         if (value <= (filterOptions.maxAmount ?? amountRange.max)) {
@@ -383,6 +387,9 @@ const OrdersPage = () => {
                     <Slider
                       value={filterOptions.maxAmount ?? amountRange.max}
                       onChange={(event: Event, newValue: number | number[]) => {
+                        if (event.target === null) {
+                          console.log('event.target is null');
+                        }
                         const value = newValue as number;
                         // Chỉ cập nhật nếu maxAmount >= minAmount
                         if (value >= (filterOptions.minAmount ?? amountRange.min)) {

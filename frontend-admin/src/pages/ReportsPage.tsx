@@ -1,9 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DollarSign, ShoppingBag, Users, Package, Calendar, Filter, Download, TrendingUp, TrendingDown, CreditCard, BanknoteIcon, ChevronDown } from 'lucide-react';
-import axios from 'axios';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency, formatDate } from '@/utils/formatter';
+import axios from 'axios';
+import {
+  BanknoteIcon,
+  Calendar,
+  ChevronDown,
+  CreditCard,
+  DollarSign,
+  Download,
+  Filter,
+  Package,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('doanh-thu');

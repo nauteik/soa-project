@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { TrendingUp, Users, ShoppingCart, Package, DollarSign, Zap, BarChart3 } from 'lucide-react';
-import axios from 'axios';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/utils/formatter';
+import axios from 'axios';
+import { BarChart3, DollarSign, Package, ShoppingCart, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+
+import { useAuth } from '../context/AuthContext';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -51,7 +52,7 @@ const DashboardPage = () => {
   }
 
   // Lấy dữ liệu từ backend
-  const { totalRevenue, totalOrders, newOrders, totalUsers, newUsers, totalProducts, bestSellingProducts, latestOrders } = dashboardData || {};
+  const { totalRevenue, totalOrders, newOrders, totalUsers, newUsers, totalProducts, latestOrders } = dashboardData || {};
 
   const stats = [
     { 
@@ -109,6 +110,8 @@ const DashboardPage = () => {
       case 'SHIPPING': return 'bg-indigo-100 text-indigo-800';
       case 'DELIVERED': return 'bg-green-100 text-green-800';
       case 'CANCELED': return 'bg-red-100 text-red-800';
+      case 'PARTIALLY_RETURNED': return 'bg-yellow-100 text-yellow-800';
+      case 'FULLY_RETURNED': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -121,6 +124,8 @@ const DashboardPage = () => {
       case 'SHIPPING': return 'Đang giao hàng';
       case 'DELIVERED': return 'Đã giao hàng';
       case 'CANCELED': return 'Đã hủy';
+      case 'PARTIALLY_RETURNED': return 'Trả hàng một phần';
+      case 'FULLY_RETURNED': return 'Trả hàng toàn bộ';
       default: return status;
     }
   };

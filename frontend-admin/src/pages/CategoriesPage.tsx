@@ -1,8 +1,8 @@
-import { Plus, Search, Filter, Edit, Trash2, Eye, X, ArrowUp, ArrowDown } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ArrowDown, ArrowUp, Edit, Eye, Filter, Plus, Search, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllCategories, Category, deleteCategory, getSubcategories, getRootCategory } from '../services/categoryApi';
-import { toast } from 'sonner';
+
+import { Category, getAllCategories, getRootCategory, getSubcategories } from '../services/categoryApi';
 
 // Mở rộng interface Category để thêm thuộc tính nội bộ
 interface EnhancedCategory extends Category {
@@ -199,29 +199,6 @@ const CategoriesPage = () => {
 
   const handleEdit = (id: number) => {
     navigate(`/categories/edit/${id}`);
-  };
-
-  const handleDelete = async (id: number) => {
-    // Kiểm tra xem danh mục có danh mục con không
-    const hasSubcategories = countSubcategories(id) > 0;
-    
-    if (hasSubcategories) {
-      toast.error('Không thể xóa danh mục này vì có danh mục con. Vui lòng xóa các danh mục con trước.');
-      return;
-    }
-    
-    if (window.confirm('Bạn có chắc chắn muốn xóa danh mục này không?')) {
-      try {
-        await deleteCategory(id);
-        
-        // Cập nhật lại danh sách danh mục sau khi xóa
-        setCategories(categories.filter(category => category.id !== id));
-        toast.success('Đã xóa danh mục thành công!');
-      } catch (error) {
-        console.error('Lỗi khi xóa danh mục:', error);
-        toast.error('Không thể xóa danh mục. Vui lòng thử lại sau.');
-      }
-    }
   };
 
   const handleAddCategory = () => {
@@ -478,14 +455,14 @@ const CategoriesPage = () => {
                             >
                               <Edit size={18} />
                             </button>
-                            <button 
+                            {/* <button 
                               onClick={() => handleDelete(category.id)}
                               className="text-red-600 hover:text-red-900"
                               title="Xóa"
                               disabled={countSubcategories(category.id) > 0}
                             >
                               <Trash2 size={18} className={countSubcategories(category.id) > 0 ? 'opacity-50 cursor-not-allowed' : ''} />
-                            </button>
+                            </button> */}
                           </div>
                         </td>
                       </tr>

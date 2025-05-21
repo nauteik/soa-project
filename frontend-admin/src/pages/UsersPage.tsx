@@ -1,23 +1,19 @@
-import { Search, Filter, Edit, Trash2, UserPlus, X, ArrowUp, ArrowDown, UserCircle, Eye, MoreVertical, CheckCircle, XCircle, ShieldAlert, Shield } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  getAllUsers, 
-  updateUserStatus, 
-  updateUserRole, 
-  deleteUser, 
-  UserResponse 
-} from '../services/userApi';
-import { IMAGES_BASE_URL } from '../config/api';
-// Thêm các import mới cho Date Range Picker
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, TextField, Stack } from '@mui/material';
-import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/vi';
 
+import { Box, Stack } from '@mui/material';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs, { Dayjs } from 'dayjs';
+import { ArrowDown, ArrowUp, Edit, Eye, Filter, Search, UserCircle, UserPlus, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { IMAGES_BASE_URL } from '../config/api';
+import { getAllUsers, updateUserStatus, UserResponse } from '../services/userApi';
+
+// Thêm các import mới cho Date Range Picker
 interface FilterOptions {
   status: 'all' | 'active' | 'inactive';
   role: 'all' | 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER';
@@ -89,32 +85,32 @@ const UsersPage = () => {
   };
 
   // Xóa người dùng
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
-      try {
-        await deleteUser(id);
-        // Cập nhật danh sách người dùng sau khi xóa
-        setUsers(users.filter(user => user.id !== id));
-      } catch (error) {
-        console.error('Lỗi khi xóa người dùng:', error);
-        alert('Không thể xóa người dùng. Vui lòng thử lại sau.');
-      }
-    }
-  };
+  // const handleDelete = async (id: number) => {
+  //   if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
+  //     try {
+  //       await deleteUser(id);
+  //       // Cập nhật danh sách người dùng sau khi xóa
+  //       setUsers(users.filter(user => user.id !== id));
+  //     } catch (error) {
+  //       console.error('Lỗi khi xóa người dùng:', error);
+  //       alert('Không thể xóa người dùng. Vui lòng thử lại sau.');
+  //     }
+  //   }
+  // };
 
   // Đổi vai trò người dùng
-  const handleChangeRole = async (id: number, newRole: 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER') => {
-    try {
-      await updateUserRole(id, newRole);
-      // Cập nhật danh sách người dùng sau khi đổi vai trò
-      setUsers(users.map(user => 
-        user.id === id ? { ...user, role: newRole } : user
-      ));
-    } catch (error) {
-      console.error('Lỗi khi thay đổi vai trò người dùng:', error);
-      alert('Không thể thay đổi vai trò người dùng. Vui lòng thử lại sau.');
-    }
-  };
+  // const handleChangeRole = async (id: number, newRole: 'USER' | 'ORDER_STAFF' | 'PRODUCT_STAFF' | 'MANAGER') => {
+  //   try {
+  //     await updateUserRole(id, newRole);
+  //     // Cập nhật danh sách người dùng sau khi đổi vai trò
+  //     setUsers(users.map(user => 
+  //       user.id === id ? { ...user, role: newRole } : user
+  //     ));
+  //   } catch (error) {
+  //     console.error('Lỗi khi thay đổi vai trò người dùng:', error);
+  //     alert('Không thể thay đổi vai trò người dùng. Vui lòng thử lại sau.');
+  //   }
+  // };
 
   // Hiển thị badge vai trò người dùng
   const getRoleBadge = (role: string) => {
@@ -144,6 +140,7 @@ const UsersPage = () => {
         year: 'numeric' 
       }).format(date);
     } catch (error) {
+      console.error('Lỗi khi định dạng ngày tham gia:', error);
       return "Không có";
     }
   };

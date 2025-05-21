@@ -70,7 +70,7 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
+      await axios.post(`${API_URL}/api/auth/register`, {
         name,
         email,
         password

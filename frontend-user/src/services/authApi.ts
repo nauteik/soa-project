@@ -45,7 +45,7 @@ export const getCurrentUser = async (token: string): Promise<User> => {
 /**
  * Cập nhật thông tin hồ sơ người dùng
  */
-export const updateUserProfile = async (token: string, userId: number, userData: Partial<User>): Promise<User> => {
+export const updateUserProfile = async (token: string, userData: Partial<User>): Promise<User> => {
   const url = `${API_BASE_URL}${ENDPOINTS.AUTH}/update-profile`;
 
   const response = await fetch(url, {

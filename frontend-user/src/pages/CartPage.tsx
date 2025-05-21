@@ -1,11 +1,4 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, PlusCircle, MinusCircle, ShoppingBag, Check } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { IMAGES_BASE_URL } from '../config/api';
-import { formatCurrency } from "@/utils/format";
-import { toast } from 'sonner';
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -14,9 +7,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { formatCurrency } from '@/utils/format';
+import { MinusCircle, PlusCircle, ShoppingBag, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { IMAGES_BASE_URL } from '../config/api';
+import { useCart } from '../context/CartContext';
 
 const CartPage = () => {
   const { cart, loading, updateCartItem, removeCartItem, clearCart } = useCart();

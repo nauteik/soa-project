@@ -34,7 +34,7 @@ const CategoryCreatePage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
   
   // Form data
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -59,16 +59,14 @@ const CategoryCreatePage = () => {
   // Load danh mục khi trang được tải
   useEffect(() => {
     const fetchCategories = async () => {
-      setIsLoadingCategories(true);
+      
       try {
         const data = await getAllCategories();
         setCategories(data);
       } catch (error) {
         console.error('Lỗi khi lấy danh sách danh mục:', error);
         toast.error('Không thể tải danh sách danh mục. Vui lòng thử lại sau.');
-      } finally {
-        setIsLoadingCategories(false);
-      }
+      } 
     };
 
     fetchCategories();

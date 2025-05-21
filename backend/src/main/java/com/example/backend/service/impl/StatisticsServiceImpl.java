@@ -22,8 +22,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final BrandRepository brandRepository;
 
     @Override
     public Map<String, Object> getDashboardStatistics() {

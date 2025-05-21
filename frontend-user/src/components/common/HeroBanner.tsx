@@ -23,7 +23,7 @@ const HeroBanner: React.FC = () => {
   };
 
   return (
-    <div className="relative overflow-hidden h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px]">
+    <div className="relative overflow-hidden h-[100px] sm:h-[150px] md:h-[200px] lg:h-[300px]">
       {/* Slides */}
       {bannerImages.map((image, index) => (
         <div
@@ -35,7 +35,7 @@ const HeroBanner: React.FC = () => {
           <img
             src={`${IMAGES_BASE_URL}${image}`}
             alt={`Banner ${index + 1}`}
-            className="w-full h-full object-contain md:object-fill lg:object-cover"
+            className="w-full h-full object-contain"
           />
         </div>
       ))}

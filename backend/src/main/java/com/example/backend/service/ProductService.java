@@ -50,6 +50,33 @@ public interface ProductService {
     );
     
     /**
+     * Tìm kiếm sản phẩm theo từ khóa và bộ lọc
+     * @param keyword Từ khóa tìm kiếm
+     * @param categoryId Lọc theo danh mục
+     * @param brandIds Lọc theo thương hiệu
+     * @param minPrice Giá tối thiểu
+     * @param maxPrice Giá tối đa
+     * @param specifications Lọc theo thông số kỹ thuật
+     * @param sortBy Sắp xếp theo
+     * @param skip Bỏ qua số lượng sản phẩm
+     * @param limit Giới hạn số lượng sản phẩm
+     * @param isActive Chỉ lấy sản phẩm đang hoạt động
+     * @return Danh sách sản phẩm và tổng số kết quả
+     */
+    Map<String, Object> searchProducts(
+        String keyword,
+        Long categoryId,
+        List<Long> brandIds,
+        Double minPrice,
+        Double maxPrice,
+        Map<String, List<String>> specifications,
+        String sortBy,
+        Integer skip,
+        Integer limit,
+        Boolean isActive
+    );
+    
+    /**
      * Tạo mới sản phẩm từ ProductCreateDTO
      * @param productDTO Thông tin sản phẩm mới
      * @return Sản phẩm đã được tạo

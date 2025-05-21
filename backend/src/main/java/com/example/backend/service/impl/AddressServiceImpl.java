@@ -125,8 +125,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressDto> getUserAddressesByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", userId));
+        userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", userId));
                 
         return addressRepository.findByUserId(userId)
                 .stream()

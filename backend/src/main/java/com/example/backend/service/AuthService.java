@@ -87,16 +87,22 @@ public interface AuthService {
     /**
      * Kiểm tra token đặt lại mật khẩu có hợp lệ không
      * 
-     * @param token token đặt lại mật khẩu
-     * @return true nếu token hợp lệ
+     * @param token token cần kiểm tra
+     * @return true nếu token hợp lệ và chưa hết hạn
      */
     boolean validateResetPasswordToken(String token);
     
     /**
-     * Đặt lại mật khẩu
+     * Đặt lại mật khẩu mới
      * 
      * @param resetPasswordDto thông tin đặt lại mật khẩu
      * @return true nếu đặt lại mật khẩu thành công
      */
     boolean resetPassword(ResetPasswordDto resetPasswordDto);
+    
+    /**
+     * Debug phương thức để kiểm tra token xác thực email trong hệ thống
+     * (Chỉ sử dụng trong môi trường phát triển)
+     */
+    void debugEmailVerificationTokens();
 } 

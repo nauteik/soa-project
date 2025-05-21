@@ -1,5 +1,6 @@
 import { API_BASE_URL, ENDPOINTS, DEFAULT_HEADERS } from '../config/api';
 import { Product, ProductsResponse } from '../types/product';
+import axios from 'axios';
 
 // Export the interface so it can be imported elsewhere
 export interface GetProductsParams {
@@ -38,6 +39,22 @@ export interface SpecificationField {
   labelEn: string;
   type: string;
   sortOrder: number;
+}
+
+/**
+ * Tham số cho search products
+ */
+export interface SearchProductsParams {
+  keyword: string;
+  category_id?: number;
+  brand_id?: number[] | number;
+  min_price?: number;
+  max_price?: number;
+  specifications?: Record<string, string[]>;
+  sort?: string;
+  skip?: number;
+  limit?: number;
+  is_active?: boolean;
 }
 
 /**
@@ -261,4 +278,51 @@ export const fetchCategorySpecifications = async (categorySlug: string): Promise
   }
   
   return response.json();
+};
+
+/**
+ * Tìm kiếm sản phẩm với nhiều tham số lọc
+ */
+export const searchProducts = async (params: SearchProductsParams): Promise<{ items: Product[], total: number }> => {
+  try {
+    // Chuẩn bị query params
+    const queryParams = new URLSearchParams();
+    
+    // Keyword là bắt buộc
+    queryParams.append('keyword', params.keyword);
+    
+    // Thêm các tham số khác
+    if (params.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params.category_id !== undefined) queryParams.append('category_id', params.category_id.toString());
+    if (params.sort !== undefined) queryParams.append('sort', params.sort);
+    if (params.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
+    
+    // Xử lý brand_id có thể là số hoặc mảng
+    if (params.brand_id !== undefined) {
+      if (Array.isArray(params.brand_id)) {
+        params.brand_id.forEach(id => 
+          queryParams.append('brand_id', id.toString())
+        );
+      } else {
+        queryParams.append('brand_id', params.brand_id.toString());
+      }
+    }
+    
+    // Giá
+    if (params.min_price !== undefined) queryParams.append('min_price', params.min_price.toString());
+    if (params.max_price !== undefined) queryParams.append('max_price', params.max_price.toString());
+    
+    // Thông số kỹ thuật - cần chuyển đổi sang JSON
+    if (params.specifications && Object.keys(params.specifications).length > 0) {
+      queryParams.append('specifications_json', JSON.stringify(params.specifications));
+    }
+    
+    // Gọi API
+    const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}/search?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi tìm kiếm sản phẩm:', error);
+    throw error;
+  }
 };

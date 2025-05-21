@@ -1,9 +1,10 @@
-import { useState, useEffect, ChangeEvent, useRef } from 'react';
+import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, Loader, Plus, Save, X } from 'lucide-react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, X, ChevronUp, ChevronDown, Loader, AlertTriangle } from 'lucide-react';
-import { getAllCategories, getCategoryById, getRootCategory, Category, updateCategory } from '../../services/categoryApi';
 import { toast } from 'sonner';
-import { API_BASE_URL, ENDPOINTS, IMAGES_BASE_URL } from '../../config/api';
+
+import { API_BASE_URL, IMAGES_BASE_URL } from '../../config/api';
+import { Category, getAllCategories, getCategoryById, getRootCategory, updateCategory } from '../../services/categoryApi';
 
 // Interface cho Specification Field
 interface SpecificationField {
@@ -36,7 +37,6 @@ const CategoryEditPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isRootCategory, setIsRootCategory] = useState(true);
   const [rootCategory, setRootCategory] = useState<Category | null>(null);
   
@@ -63,7 +63,6 @@ const CategoryEditPage = () => {
   // Load danh mục cha khi trang được tải
   useEffect(() => {
     const fetchCategories = async () => {
-      setIsLoadingCategories(true);
       try {
         const data = await getAllCategories();
         // Loại bỏ danh mục hiện tại khỏi danh sách danh mục cha có thể chọn 
@@ -75,8 +74,6 @@ const CategoryEditPage = () => {
       } catch (error) {
         console.error('Lỗi khi lấy danh sách danh mục:', error);
         toast.error('Không thể tải danh sách danh mục. Vui lòng thử lại sau.');
-      } finally {
-        setIsLoadingCategories(false);
       }
     };
 

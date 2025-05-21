@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, X, FilterIcon } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories';
 import ProductCard from '@/components/product/ProductCard';
-import { getProductsByCategorySlug, getSpecificationsByCategorySlug, fetchCategorySpecifications, SpecificationField } from '@/services/productsApi';
+import { useCategories } from '@/hooks/useCategories';
 import { getBrands } from '@/services/brandsApi';
-import { Product, Brand } from '@/types/product';
-import { debounce } from 'lodash';
+import {
+  fetchCategorySpecifications,
+  getProductsByCategorySlug,
+  getSpecificationsByCategorySlug,
+  SpecificationField,
+} from '@/services/productsApi';
+import { Brand, Product } from '@/types/product';
 import { formatVND } from '@/utils/formatters';
+import { debounce } from 'lodash';
+import { ChevronDown, ChevronUp, FilterIcon, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 // Import the proper interface from productsApi
 import type { GetProductsByCategorySlugParams } from '@/services/productsApi';
@@ -22,7 +27,7 @@ const ProductPage: React.FC = () => {
   // Sử dụng categorySlug nếu có, nếu không thì dùng slug
   const categorySlugToUse = categorySlug || slug;
   
-  const { categories, isLoading: categoriesLoading } = useCategories();
+  const { categories } = useCategories();
   const [category, setCategory] = useState<any>(null);
 
   // Local state for brands and specifications
@@ -43,7 +48,7 @@ const ProductPage: React.FC = () => {
   const [productsError, setProductsError] = useState<Error | null>(null);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categoryLoading, setCategoryLoading] = useState(true);
-  const [categoryError, setCategoryError] = useState<Error | null>(null);
+  const [categoryError] = useState<Error | null>(null);
   
   // Track which filter sections are collapsed
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({

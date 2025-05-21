@@ -10,6 +10,8 @@ import com.example.backend.dto.UserResponseDto;
 import com.example.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ import java.util.Map;
 public class AuthController {
     
     private final AuthService authService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegistrationDto registrationDto) {
@@ -35,16 +38,31 @@ public class AuthController {
     
     @GetMapping("/verify")
     public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam("token") String token) {
+        log.info("Nhận yêu cầu xác thực email với token: {}", token);
+        
         boolean verified = authService.verifyEmail(token);
         
         Map<String, String> response = new HashMap<>();
         if (verified) {
+            log.info("Xác thực email thành công với token: {}", token);
             response.put("message", "Xác thực email thành công! Bạn có thể đăng nhập ngay bây giờ.");
             return ResponseEntity.ok(response);
         } else {
+            log.warn("Xác thực email thất bại với token: {}", token);
             response.put("error", "Token không hợp lệ hoặc đã hết hạn.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+    }
+    
+    /**
+     * Endpoint debug để kiểm tra tất cả token trong hệ thống
+     * CHÚ Ý: Chỉ sử dụng trong môi trường phát triển!
+     */
+    @GetMapping("/debug/tokens")
+    public ResponseEntity<String> debugTokens() {
+        log.info("Yêu cầu debug tokens");
+        authService.debugEmailVerificationTokens();
+        return ResponseEntity.ok("Kiểm tra logs để xem thông tin token");
     }
     
     @PostMapping("/login")

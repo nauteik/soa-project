@@ -165,6 +165,41 @@ public class ProductController {
         return ResponseEntity.ok(specifications);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchProducts(
+            @RequestParam String keyword,
+            @RequestParam(required = false) Long category_id,
+            @RequestParam(required = false) List<Long> brand_id,
+            @RequestParam(required = false) Double min_price,
+            @RequestParam(required = false) Double max_price,
+            @RequestParam(required = false) String specifications_json,
+            @RequestParam(required = false, defaultValue = "newest") String sort,
+            @RequestParam(required = false, defaultValue = "0") Integer skip,
+            @RequestParam(required = false, defaultValue = "12") Integer limit,
+            @RequestParam(required = false, defaultValue = "true") Boolean is_active
+    ) {
+        try {
+            // Parse specifications JSON if provided
+            Map<String, List<String>> specifications = new HashMap<>();
+            if (specifications_json != null && !specifications_json.isEmpty()) {
+                specifications = objectMapper.readValue(specifications_json, 
+                    new TypeReference<Map<String, List<String>>>() {});
+            }
+
+            // Gọi service để tìm kiếm sản phẩm
+            Map<String, Object> result = productService.searchProducts(
+                keyword, category_id, brand_id, min_price, max_price, specifications, 
+                sort, skip, limit, is_active
+            );
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProduct(
             @RequestParam("name") String name,

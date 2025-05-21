@@ -1,13 +1,9 @@
-import React from 'react';
-import { 
-  Order, 
-  OrderItem, 
-  orderStatusColors, 
-  OrderStatus 
-} from '../../types/order';
-import { formatCurrency } from '../../utils/format';
-import { IMAGES_BASE_URL } from '../../config/api';
 import { X } from 'lucide-react';
+import React from 'react';
+
+import { IMAGES_BASE_URL } from '../../config/api';
+import { Order, OrderItem, orderStatusColors } from '../../types/order';
+import { formatCurrency } from '../../utils/format';
 
 type OrderDetailModalProps = {
   order: Order;
@@ -184,7 +180,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
                             </div>
                             <div className="ml-3">
                               <div className="text-sm font-medium text-gray-900">{item.productName}</div>
-                              {item.discount && item.discount > 0 && (
+                              {item.discount !== undefined && item.discount > 0 && (
                                 <div className="text-xs text-red-600">-{item.discount}%</div>
                               )}
                             </div>
