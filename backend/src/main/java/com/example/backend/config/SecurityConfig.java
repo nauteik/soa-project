@@ -49,7 +49,9 @@ public class SecurityConfig {
         // Không dùng wildcard "*" khi allowCredentials là true
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                "http://localhost:5174"
+                "http://localhost:5174",
+                "https://main.d22lgf5xt9eh3k.amplifyapp.com",
+                "https://main.d3kge8rlyshdb3.amplifyapp.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

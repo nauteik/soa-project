@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://18.136.205.17:8080/api';
+export const API_BASE_URL = 'https://18.136.205.17:8080/api';
 
 export const ENDPOINTS = {
   PRODUCTS: '/products',
