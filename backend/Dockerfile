@@ -1,14 +1,29 @@
-# Sử dụng image Java chính thức
-FROM eclipse-temurin:21-jre
+# Sử dụng image Maven để build project
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-# Tạo thư mục app trong container
 WORKDIR /app
 
-# Copy file JAR vào container (chỉnh lại tên file JAR cho đúng)
-COPY target/backend-0.0.1-SNAPSHOT.jar app.jar
+# Copy toàn bộ source code vào container
+COPY . .
 
-# Expose port (Render sẽ tự động set biến PORT)
+# Cấp quyền thực thi cho mvnw (nếu có)
+RUN chmod +x mvnw
+
+# Build project, tạo file JAR (dùng wrapper nếu có, nếu không thì mvn clean package)
+RUN ./mvnw clean package -DskipTests
+
+# ----------------------------
+
+# Sử dụng image Java nhẹ để chạy ứng dụng
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Copy file JAR từ stage build sang
+COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose port (Render/Railway sẽ tự động set biến PORT)
 EXPOSE 8080
 
-# Lệnh chạy ứng dụng, chú ý lấy PORT từ biến môi trường
+# Lệnh chạy ứng dụng, lấy PORT từ biến môi trường nếu có
 ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
