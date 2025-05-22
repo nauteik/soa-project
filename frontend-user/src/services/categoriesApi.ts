@@ -8,7 +8,6 @@ export const getAllCategories = async (): Promise<Category[]> => {
   const url = `${API_BASE_URL}${ENDPOINTS.CATEGORIES}`;
 
   try {
-    console.log('Fetching categories from:', url);
     const response = await fetch(url, {
       method: 'GET',
       headers: DEFAULT_HEADERS,
